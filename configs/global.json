@@ -1,0 +1,7 @@
+{
+  "api": {
+    "host": "api.games.com",
+    "public_key": "abc",
+    "secret": "abc"
+  }
+}

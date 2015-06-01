@@ -1,0 +1,6 @@
+{
+  "api": {
+    "host": "api.games.local",
+    "secret": "private_abc"
+  }
+}
