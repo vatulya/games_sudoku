@@ -1,12 +1,34 @@
-var config = require('./../config').get('api');
 var url = require('url');
 var query = require('querystring');
 var crypto = require('crypto');
-var httpsync = require('httpsync');
+var request = require('request');
+
+var config = require('./../config').get('api');
 
 var apiHost = config.host;
 var apiKey = config.public_key;
 var apiSecret = config.secret;
+
+module.exports.get = function (path, params, callback) {
+    if (typeof params === 'function') {
+        callback = params;
+        params = {};
+    }
+    var options = {
+        protocol: 'http',
+        host: apiHost,
+        pathname: path,
+        search: query.stringify(prepareParams(params || {}))
+    };
+
+    request.get(url.format(options), function (error, response, body) {
+        if (!error && response.statusCode == 200) {
+            callback(JSON.parse(body));
+        } else {
+            callback({});
+        }
+    });
+};
 
 function generateCheckSum (params) {
     var keys = [];
@@ -34,18 +56,4 @@ function prepareParams (params) {
     return params;
 }
 
-module.exports.get = function (path, params) {
-    var url = url.format({
-        protocol: 'http',
-        host: apiHost,
-        pathname: path,
-        search: query.stringify(prepareParams(params || {}))
-    });
-    var response = httpsync.get(url).end();
-    var data = {};
-    if (response.statusCode == 200) {
-        data = JSON.parse(response.data.toString());
-    }
 
-    return data;
-};
