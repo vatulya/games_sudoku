@@ -10,10 +10,6 @@ var apiKey = config.public_key;
 var apiSecret = config.secret;
 
 module.exports.get = function (path, params, callback) {
-    if (typeof params === 'function') {
-        callback = params;
-        params = {};
-    }
     var options = {
         protocol: 'http',
         host: apiHost,
@@ -22,11 +18,11 @@ module.exports.get = function (path, params, callback) {
     };
 
     request.get(url.format(options), function (error, response, body) {
+        var data = {};
         if (!error && response.statusCode == 200) {
-            callback(JSON.parse(body));
-        } else {
-            callback({});
+            data = JSON.parse(body);
         }
+        callback(data);
     });
 };
 
@@ -45,9 +41,9 @@ function generateCheckSum (params) {
         sortedParams[key] = params[key];
     }
 
-    var hasher = crypto.createHash('md5');
+    var md5 = crypto.createHash('md5');
 
-    return hasher.update(query.stringify(sortedParams) + apiSecret).digest('hex');;
+    return md5.update(query.stringify(sortedParams) + apiSecret).digest('hex');;
 }
 
 function prepareParams (params) {

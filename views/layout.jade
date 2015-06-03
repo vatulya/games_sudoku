@@ -1,8 +1,10 @@
-doctype html
-html
-  head
-    title= title
-    link(rel='stylesheet', href='/stylesheets/style.css')
-    script(src='/javascripts/test.js')
-  body
+extends layout_core
+
+block body
+    block header
+        #header
+
     block content
+
+    block footer
+        #footer
