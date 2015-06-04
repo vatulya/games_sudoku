@@ -3,7 +3,7 @@ var query = require('querystring');
 var crypto = require('crypto');
 var request = require('request');
 
-var config = require('./../config').get('api');
+var config = require('./config').get('api');
 
 var apiHost = config.host;
 var apiKey = config.public_key;

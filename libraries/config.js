@@ -7,6 +7,6 @@ nconf.env();
 nconf.file(path.join(configsPath, 'global.json'));
 
 var env = process.env.APPLICATION_ENV || 'production';
-nconf.file(path.join(configsPath, env + '.json'));
+nconf.file('env', path.join(configsPath, env + '.json'));
 
 module.exports = nconf;

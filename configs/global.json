@@ -3,5 +3,9 @@
     "host": "api.games.com",
     "public_key": "abc",
     "secret": "abc"
+  },
+  "mongodb": {
+    "host": "127.0.0.1",
+    "db": "sudoku"
   }
 }

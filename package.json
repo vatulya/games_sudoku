@@ -15,6 +15,7 @@
     "morgan": "~1.5.1",
     "serve-favicon": "~2.2.0",
     "nconf": "~0.7.1",
-    "request": "~2.57.0"
+    "request": "~2.57.0",
+    "mongoose": "~4.0.4"
   }
 }
