@@ -1,4 +1,7 @@
 {
+  "ws" : {
+    "server": "http://sudoku.games.com"
+  },
   "api": {
     "host": "api.games.com",
     "public_key": "abc",

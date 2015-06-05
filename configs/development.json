@@ -1,4 +1,7 @@
 {
+  "ws" : {
+    "server": "http://localhost:3000"
+  },
   "api": {
     "host": "api.games.local",
     "secret": "private_abc"
