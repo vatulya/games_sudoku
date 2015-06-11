@@ -5,6 +5,8 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 
+var config = require('./libraries/config');
+
 var app = express();
 
 // view engine setup
@@ -13,6 +15,13 @@ app.set('view engine', 'jade');
 
 //app.use(favicon(__dirname + '/public/favicon.ico'));
 app.use('/core.js', require('./routes/core')(app.get('env')));
+
+app.use(function (req, res, next) {// TODO : remove code below
+    if (req.query.XDEBUG_SESSION_START) {
+        config.set('XDEBUG_SESSION_START', req.query.XDEBUG_SESSION_START);
+    }
+    next();
+});
 
 app.use(logger('dev'));
 app.use(bodyParser.json());

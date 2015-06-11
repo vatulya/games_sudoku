@@ -1,9 +1,13 @@
 extends layout
 
+append js
+    script(src='/js/index.js')
+
 block content
 
     #content
-        button#test-say say
-        button#test-show show
-        button#test-bc bc
-        #result
+        button#create-game Create game
+
+        #games
+            old games:
+            #games-list

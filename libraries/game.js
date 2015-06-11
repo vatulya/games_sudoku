@@ -1,8 +1,13 @@
 var gameModel = require('./model/game');
 
-module.exports.loadByHash = function (hash, callback) {
-    var field = {
+module.exports.create = function (hash, callback) {
+    var fields = {
         'a': 'b'
     };
-    gameModel.findByHash(hash, callback);
+    var game = new gameModel();
+    game.hash = hash;
+    game.fields = fields;
+    game.save(function (error) {
+        callback(game);
+    });
 };

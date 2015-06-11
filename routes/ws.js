@@ -1,26 +1,24 @@
+var api = require('../libraries/api');
+var game = require('../libraries/game');
+
 module.exports = function (socket) {
 
     var io = socket.server;
-    var say = [];
 
-    socket.on('test:say', function (data) {
-        console.log('say');
-        console.log(data);
-        say.push(data);
-        socket.broadcast.emit('test:say', data);
-    });
-
-    socket.on('test:show', function (data) {
-        console.log('show');
-        console.log(data);
-        socket.emit('test:show', say);
-        say = [];
-    });
-
-    socket.on('test:bc', function (data) {
-        console.log('bc');
-        console.log(data);
-        io.sockets.emit('test:bc', data);
+    socket.on('game:create', function (data) {
+        var params = {
+            application: 'sudoku'
+        };
+        api.get('/sudoku/games/create', params, function (error, data) {
+            if (!error) {
+                game.create(data.hash, function (gameModel) {
+                    var url = '/game/' + gameModel.hash;
+                    socket.emit('game:created', {url: url});
+                });
+            } else {
+                console.log(error);
+            }
+        });
     });
 
 };

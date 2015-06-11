@@ -5,11 +5,8 @@ var api = require('../libraries/api');
 var gameModel = require('../libraries/model/game');
 
 router.get('/', function (req, res, next) {
-    api.get('my/info', {}, function (data) {
-        res.render('index', {
-            title: 'Express',
-            data: JSON.stringify(data)
-        });
+    res.render('index', {
+        title: 'Express'
     });
 });
 

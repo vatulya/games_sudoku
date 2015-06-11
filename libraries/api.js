@@ -2,29 +2,59 @@ var url = require('url');
 var query = require('querystring');
 var crypto = require('crypto');
 var request = require('request');
+var extend = require('util')._extend;
 
 var config = require('./config').get('api');
+var configGlobal = require('./config');
 
 var apiHost = config.host;
 var apiKey = config.public_key;
 var apiSecret = config.secret;
 
+var protectedPaths = [
+    '/sudoku/games/create'
+];
+
 module.exports.get = function (path, params, callback) {
+    if (protectedPaths.indexOf(path) >= 0) {
+        makeProtectedRequest(path, params, callback);
+    } else {
+        makeRequest(path, params, callback);
+    }
+};
+
+function makeRequest(path, params, callback) {
+    console.log(getUrl(path, params));
+    request.get(getUrl(path, params), function (error, response, body) {
+        if (response.statusCode != 200) {
+            return callback(new Error('Response status code: "' + response.statusCode + '" [' + response.request.href + ']'));
+        }
+        if (error) {
+            return callback(error);
+        }
+        return callback(null, JSON.parse(body));
+    });
+}
+
+function makeProtectedRequest(path, params, callback) {
+    makeRequest('/tokens/create', {}, function (error, response) {
+        if (error || !response.token) {
+            return callback(new Error('Protected API call error'));
+        }
+        params.token = response.token;
+        makeRequest(path, params, callback);
+    });
+}
+
+function getUrl(path, params) {
     var options = {
         protocol: 'http',
         host: apiHost,
         pathname: path,
         search: query.stringify(prepareParams(params || {}))
     };
-
-    request.get(url.format(options), function (error, response, body) {
-        var data = {};
-        if (!error && response.statusCode == 200) {
-            data = JSON.parse(body);
-        }
-        callback(data);
-    });
-};
+    return url.format(options);
+}
 
 function generateCheckSum (params) {
     var keys = [];
@@ -43,13 +73,19 @@ function generateCheckSum (params) {
 
     var md5 = crypto.createHash('md5');
 
-    return md5.update(query.stringify(sortedParams) + apiSecret).digest('hex');;
+    return md5.update(query.stringify(sortedParams) + apiSecret).digest('hex');
 }
 
 function prepareParams (params) {
-    params['api_key'] = apiKey;
-    params['check_sum'] = generateCheckSum(params);
-    return params;
+    var prepared = extend({}, params);
+
+    if (configGlobal.get('XDEBUG_SESSION_START')) {
+        prepared['XDEBUG_SESSION_START'] = configGlobal.get('XDEBUG_SESSION_START');
+    }
+
+    prepared['api_key'] = apiKey;
+    prepared['check_sum'] = generateCheckSum(prepared);
+    return prepared;
 }
 
 
