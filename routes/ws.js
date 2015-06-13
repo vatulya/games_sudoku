@@ -9,16 +9,18 @@ module.exports = function (socket) {
         var params = {
             application: 'sudoku'
         };
-        api.get('/sudoku/games/create', params, function (error, data) {
-            if (!error) {
-                game.create(data.hash, function (gameModel) {
-                    var url = '/game/' + gameModel.hash;
+        try {
+            api.get('/sudoku/games/create', params, function (error, data) {
+                if (error) throw error;
+                game.create(data.hash, function (error, sudoku) {
+                    if (error) throw error;
+                    var url = '/game/' + sudoku.getHash();
                     socket.emit('game:created', {url: url});
                 });
-            } else {
-                console.log(error);
-            }
-        });
+            });
+        } catch (e) {
+            console.log(e);
+        }
     });
 
 };

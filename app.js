@@ -23,12 +23,13 @@ app.use(function (req, res, next) {// TODO : remove code below
     next();
 });
 
-app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(cookieParser());
 app.use(require('less-middleware')(path.join(__dirname, 'public')));
 app.use(express.static(path.join(__dirname, 'public')));
+
+app.use(logger('dev'));
 
 app.use(require('./routes/common'));
 

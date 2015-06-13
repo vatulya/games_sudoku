@@ -1,26 +1,20 @@
-var ModelGame = require('./model/game');
+var ModelSudoku = require('./model/sudoku');
+var Sudoku = require('./sudoku');
 
 module.exports.create = function (hash, callback) {
-    var fields = {
-        'a': 'b'
-    };
-    var modelGame = new ModelGame();
+    var modelGame = new ModelSudoku();
     modelGame.set('hash', hash);
     modelGame.save(function (error) {
-        var game = new Game(modelGame);
-        callback(game);
+        if (error) return error;
+        var sudoku = new Sudoku(modelGame);
+        callback(null, sudoku);
     });
 };
 
 module.exports.load = function (hash, callback) {
-    ModelGame.findOne({'hash': hash}, function (error, modelGame) {
-        var game = new Game(modelGame);
-        callback(game);
+    ModelSudoku.findOneByHash(hash, function (error, modelGame) {
+        if (error) return error;
+        var sudoku = new Sudoku(modelGame);
+        callback(null, sudoku);
     });
 };
-
-function Game (modelGame) {
-    
-}
-
-
