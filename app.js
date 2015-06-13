@@ -31,23 +31,10 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(logger('dev'));
 
-app.use('/', require('./controllers/index'));
-app.use('/game/', require('./controllers/game'));
+app.use(require('./controllers/_router'));
 
-// catch 404 and forward to error handler
-app.use(function (req, res, next) {
-    var err = new Error('Not Found');
-    err.status = 404;
-    next(err);
-});
-
-// error handlers
-app.use(function (err, req, res, next) {
-    res.status(err.status || 500);
-    res.render('error', {
-        message: err.message,
-        error: app.get('env') === 'development' ? err : {}
-    });
-});
+var errorController = require('./controllers/error')(app.get('env'));
+app.use(errorController.error404);
+app.use(errorController.error500);
 
 module.exports = app;
