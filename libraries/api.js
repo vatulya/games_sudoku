@@ -26,11 +26,11 @@ module.exports.get = function (path, params, callback) {
 function makeRequest(path, params, callback) {
     console.log('API REQUEST: ' + getUrl(path, params));
     request.get(getUrl(path, params), function (error, response, body) {
-        if (response.statusCode != 200) {
-            return callback(new Error('Response status code: "' + response.statusCode + '" [' + response.request.href + ']'));
-        }
         if (error) {
             return callback(error);
+        }
+        if (response.statusCode != 200) {
+            return callback(new Error('Response status code: "' + response.statusCode + '" [' + response.request.href + ']'));
         }
         return callback(null, JSON.parse(body));
     });
