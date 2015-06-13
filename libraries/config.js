@@ -11,4 +11,3 @@ nconf.file('env', path.join(configsPath, env + '.json'));
 
 module.exports = nconf;
 
-

@@ -1,5 +1,5 @@
 var mongoose = require('mongoose');
-var config = require('./config').get('mongodb');
+var config = require('./../libraries/config').get('mongodb');
 
 var connectPath = 'mongodb://' + config.host + '/' + config.db;
 mongoose.connect(connectPath);

@@ -14,7 +14,7 @@ app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 
 //app.use(favicon(__dirname + '/public/favicon.ico'));
-app.use('/core.js', require('./routes/core')(app.get('env')));
+app.use('/core.js', require('./middlewares/core')(app.get('env')));
 
 app.use(function (req, res, next) {// TODO : remove code below
     if (req.query.XDEBUG_SESSION_START) {
@@ -31,7 +31,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(logger('dev'));
 
-app.use(require('./routes/common'));
+app.use('/', require('./controllers/index'));
+app.use('/game/', require('./controllers/game'));
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

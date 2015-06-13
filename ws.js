@@ -1,4 +1,4 @@
-var router = require('./routes/ws');
+var router = require('./controllers/ws');
 
 var io;
 
