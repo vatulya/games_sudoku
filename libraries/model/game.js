@@ -5,6 +5,10 @@ var gameSchema = mongoose.Schema({
     fields: {}
 });
 
+gameSchema.index({
+    hash: 1
+});
+
 gameSchema.methods.load = function (fields) {
     this.fields = fields;
 };
