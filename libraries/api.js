@@ -1,5 +1,5 @@
 var url = require('url');
-var query = require('querystring');
+var qs = require('qs');
 var crypto = require('crypto');
 var request = require('request');
 var extend = require('util')._extend;
@@ -12,7 +12,8 @@ var apiKey = config.public_key;
 var apiSecret = config.secret;
 
 var protectedPaths = [
-    '/sudoku/games/create'
+    '/sudoku/games/create',
+    '/test/protected' // for tests
 ];
 
 module.exports.get = function (path, params, callback) {
@@ -51,7 +52,7 @@ function getUrl(path, params) {
         protocol: 'http',
         host: apiHost,
         pathname: path,
-        search: query.stringify(prepareParams(params || {}))
+        search: qs.stringify(prepareParams(params))
     };
     return url.format(options);
 }
@@ -73,11 +74,11 @@ function generateCheckSum (params) {
 
     var md5 = crypto.createHash('md5');
 
-    return md5.update(query.stringify(sortedParams) + apiSecret).digest('hex');
+    return md5.update(qs.stringify(sortedParams) + apiSecret).digest('hex');
 }
 
 function prepareParams (params) {
-    var prepared = extend({}, params);
+    var prepared = extend({}, params || {});
 
     if (configGlobal.get('XDEBUG_SESSION_START')) {
         prepared['XDEBUG_SESSION_START'] = configGlobal.get('XDEBUG_SESSION_START');

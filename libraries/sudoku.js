@@ -9,6 +9,9 @@ Sudoku.prototype.getHash = function () {
 };
 
 Sudoku.create = function (hash, callback) {
+    if (typeof hash != 'string' || !hash) {
+        return callback(new Error('Wrong hash'));
+    }
     var modelGame = new ModelSudoku();
     modelGame.set('hash', hash);
     modelGame.save(function (error) {
