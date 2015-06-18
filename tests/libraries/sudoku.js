@@ -97,5 +97,14 @@ describe('libraries/sudoku', function () {
 
     });
 
+    describe('.prototype', function () {
+
+        describe('.generateBoard', function () {
+
+
+        });
+
+    });
+
 });
 
