@@ -40,6 +40,7 @@ describe('libraries/sudoku/board', function () {
                             });
                         }
                     }
+                    should(SudokuBoard.validateBoardStructure(board)).be.true;
                     done();
                 });
             } else {

@@ -7,8 +7,8 @@ Board.getCoordsString = function (row, column) {
     return row + '_' + column;
 };
 
-Board.getCoordsArray = function (key) {
-    return key.split('_', 2);
+Board.getCoordsArray = function (coordsString) {
+    return coordsString.split('_', 2);
 };
 
 Board.getAllowedSizes = function () {
@@ -77,9 +77,9 @@ Board.shuffleBoardBySwapRows = function (board) {
     var squareHeight = parseInt(size / verticalSquares);
     var squareRowNumber = math.random(0, verticalSquares - 1);
     var rowNumber = math.random(0, squareHeight - 1);
-    var switchRowNumber = parseInt((rowNumber + math.random(1, squareHeight - 1)) % verticalSquares);
-    var fromRowNumber = parseInt(squareRowNumber * 3 + rowNumber);
-    var toRowNumber = parseInt(squareRowNumber * 3 + switchRowNumber);
+    var switchRowNumber = parseInt((rowNumber + math.random(1, squareHeight - 1)) % squareHeight);
+    var fromRowNumber = parseInt(squareRowNumber * squareHeight + rowNumber);
+    var toRowNumber = parseInt(squareRowNumber * squareHeight + switchRowNumber);
 
     var newBoard = extend([], board);
     newBoard[toRowNumber] = board[fromRowNumber];
@@ -129,6 +129,26 @@ Board.mergeBoardRows = function (board, callback) {
         });
     });
     callback(null, mergedBoards);
+};
+
+Board.validateBoardStructure = function (board) {
+    var size = Math.sqrt(Object.keys(board).length);
+    if (this.getAllowedSizes().indexOf(size) == -1) {
+        return false;
+    }
+    for (var coords in board) {
+        if (board.hasOwnProperty(coords)) {
+            var coordsArray = this.getCoordsArray(coords);
+            if (
+                !math.inRange(board[coords], 0, size) // can be zero when no entered number
+                || !math.inRange(coordsArray[0], 1, size)
+                || !math.inRange(coordsArray[1], 1, size)
+            ) {
+                return false;
+            }
+        }
+    }
+    return true;
 };
 
 function countVerticalSquares (size) {
