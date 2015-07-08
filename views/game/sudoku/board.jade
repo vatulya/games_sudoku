@@ -1,0 +1,13 @@
+mixin cell(row, col)
+    - cellClasses = ['row-' + row, 'col-' + col];
+    td.cell(class=cellClasses)
+        span.number-container
+        - for (var number = 1; number < gameSudoku.getSize(); number++)
+            .mark(class=['mark', 'mark-' + number])
+
+- boardClasses = ['size-medium', 'hide-game']
+table.sudoku-board(class=boardClasses)
+    - for (var row = 1; row <= gameSudoku.getSize(); row++)
+        tr
+            - for (var col = 1; col <= gameSudoku.getSize(); col++)
+                +cell(row, col)

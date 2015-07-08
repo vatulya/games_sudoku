@@ -1,0 +1,125 @@
+@import "variables";
+@import "sudoku-variables";
+@import "sudoku-board";
+@import "sudoku-numpad";
+
+.sudoku-table {
+  width: 600px;
+  height: 420px;
+
+  &.resolved {
+
+    .congratulations {
+      display: block;
+    }
+
+    .sudoku-board {
+      .cell {
+        background-color: #ddffdd;
+      }
+    }
+  }
+
+  .congratulations {
+    width: 550px;
+    display: none;
+    position: absolute;
+    z-index: 10;
+
+    .message {
+      padding: 20px 50px;
+      margin: 100px auto 0;
+      width: 400px;
+      background-color: #fff;
+      border: 5px solid #cccccc;
+      border-radius: 5px;
+      font-size: 2em;
+      font-weight: bold;
+      line-height: 40px;
+      color: #008800;
+      text-align: center;
+      vertical-align: middle;
+    }
+  }
+
+  .sudoku-board {
+    float: left;
+    margin-right: 20px;
+  }
+
+  .sudoku-controls {
+    float: left;
+  }
+
+  .sudoku-game-info {
+    clear: both;
+  }
+}
+
+/********************************** controls *********************************/
+
+.sudoku-controls {
+  width: 165px;
+
+  .sudoku-controls-row {
+    margin-bottom: 5px;
+  }
+
+  .mark-mode,
+  .check-field,
+  .clear-field {
+    &.btn {
+      width: 100%;
+    }
+  }
+
+  .undo-move,
+  .redo-move {
+    &.btn {
+      width: 83px;
+    }
+  }
+}
+
+/********************************** index and other *********************************/
+
+.game-board-example-container {
+  height: 350px;
+
+  &.small {
+    height: 250px;
+
+    .game-board-example {
+      width: 300px;
+    }
+  }
+
+  &.medium {
+    height: 300px;
+
+    .game-board-example {
+      width: 325px;
+    }
+  }
+}
+
+.game-board-example {
+  text-align: center;
+  margin: 0 auto;
+  width: 350px;
+  height: auto;
+
+  .sudoku-board {
+    margin: 0 auto;
+  }
+}
+
+.create-new-game-container {
+  .buttons-container {
+    .buttons {
+      text-align: center;
+      width: 325px;
+      margin: 0 auto;
+    }
+  }
+}

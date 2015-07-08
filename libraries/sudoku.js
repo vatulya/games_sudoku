@@ -2,10 +2,15 @@ var ModelSudoku = require('./../models/sudoku');
 
 function Sudoku (modelSudoku) {
     this.modelSudoku = modelSudoku;
+    this.board = {size: 9};
 }
 
 Sudoku.prototype.getHash = function () {
     return this.modelSudoku.hash;
+};
+
+Sudoku.prototype.getSize = function () {
+    return this.board.size;
 };
 
 Sudoku.create = function (hash, callback) {

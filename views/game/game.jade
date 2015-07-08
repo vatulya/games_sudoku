@@ -1,0 +1,8 @@
+extends ../layout
+
+append js
+    script(src='/js/sudoku.js')
+
+block content
+    #sudoku
+        include sudoku/board-container

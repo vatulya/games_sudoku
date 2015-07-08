@@ -1,0 +1,13 @@
+- divId = 'game-sudoku-' + gameSudoku.getHash()
+
+.sudoku-table(id='#{divId}', ondragstart='return false;', ondrop='return false;')
+
+    include board
+
+    .sudoku-game-info
+        .time-container
+            | Time:
+            span.time
+        .difficulty-container
+            | Difficulty:
+            span.difficulty
