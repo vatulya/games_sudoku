@@ -1,7 +1,14 @@
 extends ../layout
 
 append js
-    script(src='/js/sudoku.js')
+    script(src='/js/sudoku/control/numpad.js')
+    script(src='/js/sudoku/cell.js')
+    script(src='/js/sudoku/cell/group.js')
+    script(src='/js/sudoku/cell/square.js')
+    script(src='/js/sudoku/cell/row.js')
+    script(src='/js/sudoku/cell/col.js')
+    script(src='/js/sudoku/board.js')
+    script(src='/js/sudoku/sudoku.js')
 
 block content
     #sudoku

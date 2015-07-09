@@ -1,6 +1,6 @@
 - divId = 'game-sudoku-' + gameSudoku.getHash()
 
-.sudoku-table(id='#{divId}', ondragstart='return false;', ondrop='return false;')
+.sudoku-table(id='#{divId}', data-hash=gameSudoku.getHash(), ondragstart='return false;', ondrop='return false;')
 
     include board
 

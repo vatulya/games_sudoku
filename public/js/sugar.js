@@ -1,16 +1,22 @@
-(function($){
-    $.fn.disable = function() {
+(function ($) {
+    $.fn.disable = function () {
         this.attr('disabled', 'disabled');
         return this;
     };
-    $.fn.disabled = function() {
+    $.fn.disabled = function () {
         return !!this.attr('disabled');
     };
-    $.fn.enable = function() {
+    $.fn.enable = function () {
         this.removeAttr('disabled');
         return this;
     };
-    $.fn.enabled = function() {
+    $.fn.enabled = function () {
         return !this.attr('disabled');
     };
 })(jQuery);
+
+function mixin (cl, mixin) {
+    for (var property in mixin) {
+        cl.prototype.property = mixin[property];
+    }
+}
