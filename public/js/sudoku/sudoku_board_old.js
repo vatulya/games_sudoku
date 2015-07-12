@@ -139,18 +139,6 @@
             }
         };
 
-        $Board.selectCell = function ($cell) {
-            var coords = $Board.getCellCoords($cell);
-            $Board.board.find('.cell.selected').removeClass('selected');
-            $Board.board.find('.cell.row-' + coords[0] + '.col-' + coords[1]).addClass('selected');
-        };
-
-        $Board.unselectCell = function (cell) {
-            cell = $(cell);
-            $Board.board.find('.cell.selected').removeClass('selected');
-            $Board.board.data('selected-cell', '');
-        };
-
         /*** COORDS ***/
 
         $Board.getCellCoords = function ($cell, asString) {

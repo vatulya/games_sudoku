@@ -1,500 +1,296 @@
+function initSudoku(el) {
+    return new Sudoku(ws, new SudokuBoard(el));
+}
+
 function Sudoku(ws, board) {
     this.ws = ws; // websocket object
     this.board = board; // sudoku board object
+    this.history = new SudokuHistory(this);
+
+    this.hash = '';
+    this.isMarkMode = false;
+    this.allowedNumbers = [];
+
+    this.durationTimer = 0; // Update duration timer
+    this.duration = 0;
+    this.lastSystemDataMicrotime = 0;
+
+    this.init();
 }
 
 mixin(Sudoku, MixinEvent);
 
-function initSudoku(el) {
-    var Sudoku = new Sudoku(ws, new SudokuBoard(el));
+/********************************************** INIT ***/
 
-    //$(document).trigger('Sudoku:initialize', [Sudoku]); // Global event
+Sudoku.prototype.init = function () {
+    this.initProperties();
 
-    var $el = $(el);
-    $el.data('Sudoku', Sudoku);
-    $el.trigger('Sudoku:initialize', [Sudoku]); // Container event
+    this.initEvents();
 
-    return Sudoku;
-}
+    //$(document).trigger('Sudoku:initialize', [this]); // Global event
 
-$(document).ready(function() {
-    $('.sudoku-table').each(function (i, el) {
-        initSudoku(el);
+    this.board.data('Sudoku', this);
+    this.board.container.trigger('Sudoku:initialize', [this]); // Container event
+};
+
+Sudoku.prototype.initProperties = function () {
+    this.hash = this.board.data('hash');
+
+    for (var number = 0; number <= this.getSize(); number++) {
+        this.allowedNumbers[number] = true; // by default all numbers are allowed
+    }
+};
+
+Sudoku.prototype.initEvents = function () {
+    var self = this;
+
+    $(document)
+        .on('game.pause', function (e, state) {
+            state ? self.pause() : self.start();
+        })
+    ;
+
+    this.ws
+        .on('open', function (data) {
+            self.loadBoard();
+        })
+        .on('close', function (data) {
+            self._stopPing();
+        })
+        .on('systemData', function (data) {
+            self.systemDataResponse(data['_system'] || {});
+        })
+        .on('forceRefresh', function (data) {
+            self.forceRefresh(data['reason'] || '');
+        })
+
+        .on('loadBoard', this.checkSystemDataResponse(this.loadBoardResponse))
+        .on('checkBoard', this.checkSystemDataResponse(this.checkBoardResponse))
+    ;
+};
+
+/********************************************** /INIT ***/
+
+/********************************************** WS METHODS ***/
+
+Sudoku.prototype.sendUserAction = function (action, parameters) {
+    parameters = $.extend({
+        '_game_hash': this.hash,
+        //'_action': action,
+        '_hash': this.board.getBoardHash()
+    }, parameters || {});
+    this.ws.emit(action, parameters);
+    //.then(function(response) {
+    //    if ($Sudoku.systemDataResponse(response)) {
+    //        callback(response);
+    //    }
+    //});
+};
+
+Sudoku.prototype.checkSystemDataResponse = function (callback) {
+    var self = this;
+    return function (response) {
+        if (self.systemDataResponse(response)) {
+            callback(response);
+        }
+    };
+};
+
+Sudoku.prototype.loadBoard = function () {
+    this.sendUserAction('loadBoard');
+};
+
+Sudoku.prototype.start = function () {
+    this.sendUserAction('start');
+    this.board.showBoard();
+    this._startDurationTimer();
+};
+
+Sudoku.prototype.pause = function () {
+    this.sendUserAction('pause');
+    this.board.hideBoard();
+    this._stopDurationTimer();
+};
+
+Sudoku.prototype.setCellNumber = function (cell, number) {
+    number = parseInt(number);
+    if (number < 0 || number > this.getSize()) {
+        throw new Error('Can\'t set number "' + number + '". Wrong number.');
+    }
+    this.board.setCell(cell, number);
+    this.sendUserAction('setCell', this.board.getBoardState());
+    this.checkAllowedNumbers();
+};
+
+Sudoku.prototype.toggleCellMark = function (cell, number) {
+    number = parseInt(number);
+    if (number < 1 || number > this.getSize()) {
+        throw new Error('Can\'t set mark "' + number + '". Wrong number.');
+    }
+    this.board.toggleCellMark(cell, number);
+    this.sendUserAction('setCell', this.board.getBoardState());
+};
+
+Sudoku.prototype.clearCellMark = function (cell) {
+    this.board.setCellMarks(cell, []);
+    this.sendUserAction('setCell', this.board.getBoardState());
+};
+
+Sudoku.prototype.clearBoard = function () {
+    this.history.clear();
+    this.board.clearBoard();
+    this.sendUserAction('clearBoard');
+};
+
+Sudoku.prototype.checkBoard = function () {
+    this.sendUserAction('checkBoard');
+};
+
+/********************************************** /WS METHODS ***/
+
+/********************************************** WS METHODS RESPONSES ***/
+
+Sudoku.prototype.systemDataResponse = function (response) {
+    if (response.hasOwnProperty('_system') && $.isPlainObject(response['_system'])) {
+        var systemResponse = response['_system'];
+        if (systemResponse.hasOwnProperty('microtime') && systemResponse['microtime'] > this.lastSystemDataMicrotime) {
+            this.lastSystemDataMicrotime = systemResponse['microtime'];
+            if (this._checkGameHash(systemResponse['gameHash'] || '')) {
+                this.history.setUndo(systemResponse['undoMove'] || {});
+                this.history.setRedo(systemResponse['redoMove'] || {});
+                this._updateGameServerTime(systemResponse['duration']);
+                return true;
+            }
+        }
+    }
+    return false;
+};
+
+Sudoku.prototype.loadBoardResponse = function (response) {
+    this.board.fillBoard(response);
+    this.checkAllowedNumbers();
+    this.start();
+};
+
+Sudoku.prototype.checkBoardResponse = function (response) {
+    if (response.hasOwnProperty('resolved') && response.resolved) {
+        this.win();
+    } else {
+        this.board.showErrors(response.errors || []);
+    }
+};
+
+/********************************************** /WS METHODS RESPONSES ***/
+
+/********************************************** PROTECTED METHODS ***/
+
+Sudoku.prototype._checkGameHash = function () {
+    // TODO: add logic to this method
+    return true;
+};
+
+Sudoku.prototype._startDurationTimer = function () {
+    var self = this;
+    var timer = this.board.container.find('.game-time');
+    if (!this.durationTimer && timer.length) {
+        this.durationTimer = setInterval(function () {
+            if (self.duration > 0) {
+                self.duration += 1;
+                timer.html(this.duration.toDDHHMMSS(false, true));
+            }
+        }, 1000);
+    }
+};
+
+Sudoku.prototype._stopDurationTimer = function () {
+    clearInterval(this.durationTimer);
+    this.durationTimer = false;
+};
+
+Sudoku.prototype._updateGameServerTime = function (time) {
+    this.duration = time;
+};
+
+Sudoku.prototype._win = function () {
+    this.board.resolved();
+    this._stopDurationTimer();
+    this._stopPing();
+};
+
+Sudoku.prototype._forceRefresh = function (reason) {
+    alert('Принудительная перезагрузка страницы. Причина: ' + reason);
+    window.location.reload();
+};
+
+/********************************************** /PROTECTED METHODS ***/
+
+/********************************************** PUBLIC METHODS ***/
+
+Sudoku.prototype.getSize = function () {
+    return this.board.size;
+};
+
+Sudoku.prototype.selectCell = function (cell) {
+    if (cell) {
+        this.board.selectCell(cell);
+    }
+};
+
+Sudoku.prototype.unselectCell = function () {
+    this.board.selectCell();
+};
+
+Sudoku.prototype.getSelectedCell = function () {
+    return this.board.selectedCell;
+};
+
+Sudoku.prototype.checkNumber = function (number) {
+    var Cell = this.getSelectedCell();
+    if (Cell) {
+        this.history.clear();
+        if (this.isMarkMode) {
+            if (number > 0) {
+                this.toggleCellMark(Cell, number)
+            } else {
+                this.clearCellMark(Cell);
+            }
+        } else {
+            this.setCellNumber(Cell, number);
+        }
+        this.board.hoverNumber(Cell.getNumber());
+        this.checkWinGame();
+    }
+};
+
+Sudoku.prototype.useHistory = function (historyType) {
+    var result = historyType == 'undo' ? this.history.useUndo() : this.history.useRedo();
+    if (result) {
+        this.sendUserAction(historyType + 'Move', this.board.getBoardState());
+    }
+};
+
+Sudoku.prototype.checkAllowedNumbers = function () {
+    var self = this;
+    var numbersCount = {};
+    $.each(this.board.cells, function (key, Cell) {
+        if (Cell.getNumber()) {
+            var number = '' + Cell.getNumber(); // to string because I am using it as hash key
+            numbersCount.hasOwnProperty(number) ? numbersCount[number]++ : numbersCount[number] = 1;
+        }
     });
-});
+    $.each(this.allowedNumbers, function(number, isAllowed) {
+        self.allowedNumbers[number] = !(numbersCount.hasOwnProperty('' + number) && numbersCount['' + number] >= self.size);
+    });
 
+    this.trigger('allowedNumbersChanged', this.allowedNumbers);
+};
 
+Sudoku.prototype.checkWinGame = function () {
+    if (this.board.isFilled()) {
+        this.checkBoard();
+    }
+};
 
+/********************************************** /PUBLIC METHODS ***/
 
-
-function Sudoku(ws, board) {
-
-    var $Sudoku = this;
-
-    $Sudoku.SC = ws;
-    $Sudoku.board = board;
-
-    $Sudoku.hash = board.getGameHash();
-    $Sudoku.table = board.getTable();
-
-    var S = $Sudoku.SC.S;
-
-    $Sudoku.pushTimer = false; // Mouse button push
-    $Sudoku.pingTimer = false; // Ping timer
-    $Sudoku.durationTimer = 0; // Update duration timer
-    $Sudoku.duration = 0;
-    $Sudoku.lastSystemDataMicrotime = 0;
-
-    $Sudoku.selectedCell = undefined;
-    $Sudoku.allowedNumbers = [true, true, true, true, true, true, true, true, true, true]; // 0..9
-    $Sudoku.history = {'undo': false, 'redo': false};
-
-    // BIND EVENTS
-    var bindEvents = function () {
-
-        $Sudoku.table
-            .on('mouseover', '.sudoku-board .cell', function () {
-                // hover vertical col and horizontal row
-                $Sudoku.board.hoverColAndRow($(this));
-            })
-            .on('mouseout', '.sudoku-board', function () {
-                // unhover vertical col and horizontal row
-                $Sudoku.board.hoverColAndRow();
-            })
-            .on('click', '.sudoku-board .cell', function () {
-                // look mousedown/mouseup
-                $Sudoku.board.hoverNumber($Sudoku.board.getCellNumber($(this)));
-            })
-            .on('click', '.sudoku-numpad .number', function () {
-                var el = $(this);
-                if (!el.hasClass('disabled')) {
-                    $Sudoku.checkNumber(el.data('number'));
-                }
-            })
-            .on('click', '.check-field', function () {
-                $Sudoku.checkBoard(this);
-            })
-            .on('click', '.clear-field', function () {
-                if (confirm('Вы действительно хотите очистить поле?\nЭто действие удалит все ваши ходы и пометки.')) {
-                    $Sudoku.clearBoard(this);
-                }
-            })
-            .on('click', '.undo-move', function () {
-                if (!$(this).hasClass('disabled')) {
-                    $Sudoku.useHistory('undo');
-                }
-            })
-            .on('click', '.redo-move', function () {
-                if (!$(this).hasClass('disabled')) {
-                    $Sudoku.useHistory('redo');
-                }
-            })
-            .on('mouseover', '.sudoku-numpad.popup .number.enabled', function () {
-                $(this).addClass('hover');
-            })
-            .on('mouseout', '.sudoku-numpad.popup .number.enabled', function () {
-                $Sudoku.table.find('.sudoku-numpad.popup .number.hover').removeClass('hover');
-            })
-            .on('mousedown', '.cell.open', function () {
-                $Sudoku.mouseDown($(this));
-            })
-            .on('mouseup', '.sudoku-numpad.popup .number.enabled', function () {
-                $Sudoku.mouseUp($(this));
-            })
-            .on('mouseup', function () {
-                clearTimeout($Sudoku.pushTimer);
-                $Sudoku.table.find('.cell.pushed').removeClass('pushed');
-                $Sudoku.hidePopupNumpad();
-            })
-        ;
-
-        $(d)
-            .on('keypress', function (e) {
-                $Sudoku.keyPress(e.charCode);
-            })
-            .on('websocket' + S + 'open', function (e) {
-                $Sudoku.loadBoard();
-            })
-            .on('websocket' + S + 'close', function (e) {
-                $Sudoku._stopPing();
-            })
-            .on('websocket' + S + 'message' + S + 'sudoku' + S + 'systemData', function (e, data) {
-                if ($.isPlainObject(data['_system'])) {
-                    $Sudoku.systemDataResponse(data['_system']);
-                }
-            })
-            .on('websocket' + S + 'message' + S + 'sudoku' + S + 'forceRefresh', function (e, data) {
-                $Sudoku.forceRefresh(data['reason'] || '');
-            })
-            .on('game.pause', function (e, state) {
-                state ? $Sudoku.pause() : $Sudoku.start();
-            })
-        ;
-
-    };
-    bindEvents();
-    // BIND EVENTS
-
-    // WEBSOCKET METHODS
-    var websocketMethods = function () {
-
-        /**************************** SEND USER ACTION **********************/
-
-        $Sudoku.sendUserAction = function (action, parameters, callback) {
-            parameters = $.extend({
-                '_game_hash': $Sudoku.hash,
-                '_action': action,
-                '_hash': $Sudoku.board.getBoardHash()
-            }, parameters || {});
-            $Sudoku.SC.call('sudoku', parameters).then(function(response) {
-                if ($Sudoku.systemDataResponse(response)) {
-                    callback(response);
-                }
-            });
-        };
-
-        /**************************** /SEND USER ACTION *********************/
-
-        /**************************** LOAD BOARD ****************************/
-
-        $Sudoku.loadBoard = function () {
-            $Sudoku.sendUserAction('loadBoard', {}, $Sudoku.loadBoardResponse);
-        };
-
-        $Sudoku.loadBoardResponse = function (response) {
-            $Sudoku.board.fillBoard(response);
-            $Sudoku.checkHistoryButtons();
-            $Sudoku.checkAllowedNumbers();
-            $Sudoku.start();
-        };
-
-        /**************************** /LOAD BOARD ***************************/
-
-        /**************************** GAME START / STOP *********************/
-
-        $Sudoku.start = function () {
-            $Sudoku.board.showBoard();
-            $Sudoku._startDurationTimer();
-            $Sudoku.sendUserAction('start');
-            $Sudoku._startPing();
-        };
-
-        $Sudoku.pause = function () {
-            $Sudoku.board.hideBoard();
-            $Sudoku._stopPing();
-            $Sudoku.sendUserAction('pause');
-            $Sudoku._stopDurationTimer();
-        };
-
-        /**************************** /GAME START / STOP ********************/
-
-        /**************************** SYSTEM DATA RESPONSE ******************/
-
-        $Sudoku.systemDataResponse = function (response) {
-            if ($.isPlainObject(response['_system'])) {
-                response = response['_system'];
-                if (typeof response['microtime'] != 'undefined' && response['microtime'] > $Sudoku.lastSystemDataMicrotime) {
-                    $Sudoku.lastSystemDataMicrotime = response['microtime'];
-                    $Sudoku.checkGameHash(response['gameHash'] || '');
-                    $Sudoku.setHistory('undo', response['undoMove'] || {});
-                    $Sudoku.setHistory('redo', response['redoMove'] || {});
-                    $Sudoku.checkHistoryButtons();
-                    $Sudoku.updateGameServerTime(response['duration']);
-                    return true;
-                }
-            }
-            return false;
-        };
-
-        /**************************** /SYSTEM DATA RESPONSE *****************/
-
-        /**************************** SET CELL NUMBER ***********************/
-
-        $Sudoku.setCellNumber = function ($cell, number) {
-            number = parseInt(number);
-            if ($Sudoku['allowedNumbers'][number]) {
-                $Sudoku.board.setCell($cell, number);
-                $Sudoku.sendUserAction('setCell', $Sudoku.board.getBoardState());
-                $Sudoku.checkAllowedNumbers();
-            }
-        };
-
-        /**************************** /SET CELL NUMBER **********************/
-
-        /**************************** SET CELL MARK *************************/
-
-        $Sudoku.setCellMark = function ($cell, mark) {
-            mark ? $Sudoku.board.addCellMark($cell, mark) : $Board.setCellMarks($cell, []);
-            $Sudoku.sendUserAction('setCell', $Sudoku.board.getBoardState());
-        };
-
-        /**************************** /SET CELL MARK ************************/
-
-        /**************************** CLEAR BOARD ***************************/
-
-        $Sudoku.clearBoard = function () {
-            $Sudoku.clearHistory();
-            $Sudoku.board.clearBoard();
-            $Sudoku.sendUserAction('clearBoard');
-        };
-
-        /**************************** /CLEAR BOARD **************************/
-
-        /**************************** CHECK BOARD ***************************/
-
-        $Sudoku.checkBoard = function () {
-            $Sudoku.sendUserAction('checkBoard', {}, $Sudoku.checkBoardResponse);
-        };
-
-        $Sudoku.checkBoardResponse = function (response) {
-            if (response.resolved) {
-                $Sudoku.win();
-            } else if (typeof response.errors == 'undefined' || response.errors.length == 0 || !response.errors) {
-                var board = $Sudoku.table.find('.sudoku-board').addClass('no-errors');
-                setTimeout(function () {board.removeClass('no-errors');}, 1000);
-            } else {
-                $.each(response.errors, function (coords, number) {
-                    $Sudoku.board.showError(coords[0], coords[1]);
-                });
-            }
-        };
-
-        /**************************** /CHECK BOARD **************************/
-
-        /**************************** PING **********************************/
-
-        $Sudoku._startPing = function () {
-            $Sudoku._stopPing();
-            $Sudoku.pingTimer = setInterval(function () {
-                $Sudoku.sendUserAction('ping');
-            }, 3000);
-        };
-
-        $Sudoku._stopPing = function () {
-            clearInterval($Sudoku.pingTimer);
-            $Sudoku.pingTimer = false;
-        };
-
-        /**************************** /PING *********************************/
-
-        /**************************** DURATION ******************************/
-
-        $Sudoku._startDurationTimer = function () {
-            var timer = $Sudoku.table.find('.game-time');
-            if (!$Sudoku.durationTimer) {
-                $Sudoku.durationTimer = setInterval(function () {
-                    if ($Sudoku.duration > 0) {
-                        $Sudoku.duration += 1;
-                        timer.html($Sudoku.duration.toDDHHMMSS(false, true));
-                    }
-                }, 1000);
-            }
-        };
-
-        $Sudoku._stopDurationTimer = function () {
-            clearInterval($Sudoku.durationTimer);
-            $Sudoku.durationTimer = false;
-        };
-
-        $Sudoku.updateGameServerTime = function (time) {
-            $Sudoku.duration = time;
-        };
-
-        /**************************** /DURATION ******************************/
-
-    };
-    websocketMethods();
-    // WEBSOCKET METHODS
-
-    // USER ACTION METHODS
-    var userActionMethods = function () {
-
-        $Sudoku.checkNumber = function (number) {
-            var $cell = $Sudoku.getSelectedCell();
-            if ($cell && $cell.length) {
-                $Sudoku.clearHistory();
-                $Sudoku.isMarkMode() ? $Sudoku.setCellMark($cell, number) : $Sudoku.setCellNumber($cell, number);
-                $Sudoku.board.hoverNumber($Sudoku.board.getCellNumber($cell));
-                $Sudoku.checkWinGame();
-            }
-        };
-
-        /*** SELECTED CELL ***/
-
-        $Sudoku.selectCell = function ($cell) {
-            $Sudoku.table.find('.cell.selected').removeClass('selected');
-            $Sudoku.selectedCell = $cell.addClass('selected');
-        };
-
-        $Sudoku.unselectCell = function () {
-            $Sudoku.table.find('.cell.selected').removeClass('selected');
-            $Sudoku.selectedCell = undefined;
-        };
-
-        $Sudoku.getSelectedCell = function () {
-            return $Sudoku.selectedCell;
-        };
-
-        /*** SELECTED CELL ***/
-
-        /******************************** UNDO REDO HISTORY *****************************/
-
-        $Sudoku.setHistory = function (historyType, move) {
-            if ($Sudoku.history.hasOwnProperty(historyType)) {
-                $Sudoku.history[historyType] = ($.isPlainObject(move) && !$.isEmptyObject(move)) ? move :  false;
-            }
-        };
-
-        $Sudoku.checkHistoryButtons = function () {
-            var undoButton = $Sudoku.table.find('.undo-move'),
-                redoButton = $Sudoku.table.find('.redo-move')
-                ;
-            $Sudoku.history.hasOwnProperty('undo') && !$.isEmptyObject($Sudoku.history['undo'])
-                ? undoButton.removeClass('disabled')
-                : undoButton.addClass('disabled');
-            $Sudoku.history.hasOwnProperty('redo') && !$.isEmptyObject($Sudoku.history['redo'])
-                ? redoButton.removeClass('disabled')
-                : redoButton.addClass('disabled');
-        };
-
-        $Sudoku.getLastMoveFromHistory = function (historyType) {
-            if ($Sudoku.history.hasOwnProperty(historyType)) {
-                return $Sudoku.history[historyType];
-            }
-            return false;
-        };
-
-        $Sudoku.useHistory = function (historyType) {
-            var cells = $Sudoku.getLastMoveFromHistory(historyType);
-            $Sudoku.clearHistory();
-            if (!$.isPlainObject(cells) || $.isEmptyObject(cells)) {
-                return false;
-            }
-            $.each(cells, function (coords, data) {
-                var $cell = $Sudoku.board.getCellByCoordsRow(coords),
-                    number = typeof data['number'] != 'undefined' ? parseInt(data['number']) : undefined,
-                    marks = typeof data['marks'] != 'undefined' ? data['marks'] : undefined
-                    ;
-                $Sudoku.board.setCell($cell, number, marks);
-            });
-            $Sudoku.sendUserAction(historyType + 'Move', $Sudoku.board.getBoardState());
-            return true;
-        };
-
-        $Sudoku.clearHistory = function () {
-            $Sudoku.setHistory('undo');
-            $Sudoku.setHistory('redo');
-            $Sudoku.checkHistoryButtons();
-        };
-
-        /******************************** /UNDO REDO HISTORY ****************************/
-
-    };
-    userActionMethods();
-    // USER ACTION METHODS
-
-    // PROTECTED METHODS
-    var protectedMethods = function () {
-
-        $Sudoku.isMarkMode = function () {
-            return $Sudoku.table.find('.mark-mode').hasClass('active');
-        };
-
-        $Sudoku.checkGameHash = function (hash) {
-            return true;
-        };
-
-        $Sudoku.checkAllowedNumbers = function () {
-            var numbersCount = {};
-            $Sudoku.table.find('.cell').each(function (i, el) {
-                var number = '' + $Sudoku.board.getCellNumber($(el));
-                if (number) {
-                    numbersCount.hasOwnProperty(number) ? numbersCount[number]++ : numbersCount[number] = 1;
-                }
-            });
-            $.each($Sudoku.allowedNumbers, function(number, isAllowed) {
-                $Sudoku['allowedNumbers'][number] = !(numbersCount.hasOwnProperty(number) && numbersCount[number] >= 9);
-            });
-            $Sudoku.checkNumpad();
-        };
-
-        $Sudoku.checkNumpad = function () {
-            $Sudoku.table.find('.sudoku-numpad .number').each(function (i, el) {
-                el = $(el);
-                el.removeClass('disabled').addClass('enabled');
-                var number = '' + el.data('number');
-                if ($Sudoku['allowedNumbers'].hasOwnProperty(number) && !$Sudoku['allowedNumbers'][number]) {
-                    el.addClass('disabled').removeClass('enabled');
-                }
-            });
-        };
-
-        $Sudoku.checkWinGame = function () {
-            if (!$Sudoku.table.find('.cell.empty').length) {
-                $Sudoku.checkBoard();
-            }
-        };
-
-        $Sudoku.win = function () {
-            $Sudoku.table.addClass('resolved');
-            $Sudoku._stopDurationTimer();
-            $Sudoku._stopPing();
-        };
-
-        $Sudoku.mouseDown = function ($cell) {
-            $Sudoku.selectCell($cell.addClass('pushed'));
-            $Sudoku.pushTimer = setTimeout(function () { $Sudoku.showPopupNumpad(); }, 500);
-        };
-
-        $Sudoku.mouseUp = function ($number) {
-            $Sudoku.checkNumber($number.data('number'));
-        };
-
-        $Sudoku.getPopupNumpad = function () {
-            var $numpad = $Sudoku.table.find('.sudoku-numpad').clone().addClass('popup');
-            $Sudoku.table.append($numpad);
-            w.disableSelect($numpad);
-            return $numpad;
-        };
-
-        $Sudoku.showPopupNumpad = function () {
-            $Sudoku.hidePopupNumpad();
-            var $cell = $Sudoku.table.find('.cell.pushed'),
-                coords = $cell.position(),
-                popupNumpad = $Sudoku.getPopupNumpad().show()
-                ;
-//                coords.top = coords.top - (popupNumpad.outerHeight() / 2)/* + $cell.outerHeight()*/;
-//                coords.left = coords.left - (popupNumpad.outerWidth() / 2)/* + ($cell.outerWidth() / 2)*/;
-//                popupNumpad.offset(coords);
-            popupNumpad.css('position', 'absolute');
-            popupNumpad.css('top', coords.top - (popupNumpad.outerHeight() / 2));
-            popupNumpad.css('left', coords.left - (popupNumpad.outerWidth() / 2));
-        };
-
-        $Sudoku.hidePopupNumpad = function () {
-            $Sudoku.table.find('.sudoku-numpad.popup').remove();
-        };
-
-        $Sudoku.keyPress = function (charCode) {
-            if (charCode == 96 || charCode == 42) { // ~` OR *
-                $Sudoku.table.find('.mark-mode').click();
-            } else {
-                var number = parseInt(String.fromCharCode(charCode));
-                if (number >= 0 && number <= 9) { // 0..9
-                    $Sudoku.checkNumber(number);
-                }
-            }
-        };
-
-        $Sudoku.forceRefresh = function (reason) {
-            alert('Принудительная перезагрузка страницы. Причина: ' + reason);
-            w.location.reload();
-        };
-
-    };
-    protectedMethods();
-    // PROTECTED METHODS
-}
-
-w.Sudoku = Sudoku;
 
