@@ -1,135 +1,169 @@
 var extend = require('util')._extend;
 var math = require('./../../helpers/math');
 
-var Board = {};
+var GeneratorSimple = require('./board/generator/simple');
+var Cell = require('./cell');
+var CellRow = require('./cell/row');
+var CellCol = require('./cell/col');
+var CellSquare = require('./cell/square');
+var CellCoords = require('./cell/coords');
+var sizeMap = require('./board/sizesMap');
 
-Board.getCoordsString = function (row, column) {
-    return row + '_' + column;
+/**
+ * {
+ *      size: 9,
+ *      cells: {
+ *          "1_1": {
+ *              coords: "1_1",
+ *              number: 1,
+ *              isOpen: true,
+ *              marks: []
+ *          }
+ *          "1_2": {
+ *              coords: "1_2",
+ *              number: 5,
+ *              isOpen: false,
+ *              marks: [1, 4]
+ *          }
+ *          ...
+ *      },
+ *      squares: {
+ *          "1_1": 1,
+ *          "1_2": 2
+ *      }
+ * }
+ *
+ * @param parameters
+ * @constructor
+ */
+function Board (parameters) {
+
+    this.size = 0;
+
+    this.openCells = {};
+    this.checkedCells = {};
+    this.markedCells = {};
+
+    this.cells = {};
+    this.rows = [];
+    this.cols = [];
+    this.squares = [];
+
+    this.init(parameters);
+}
+
+/********************************************** INIT ***/
+
+Board.prototype.init = function (parameters) {
+    this.size = parameters.size;
+
+    this.initCells(parameters);
 };
 
-Board.getCoordsArray = function (coordsString) {
-    return coordsString.split('_', 2);
+Board.prototype.initCells = function (parameters) {
+    var self = this;
+
+    var cellsPerRow = [];
+    var cellsPerCol = [];
+    var cellsPerSquare = [];
+
+    var allKeys = Object.keys(parameters.cells);
+
+    if (this.size != allKeys.length) {
+        throw new Error('Wrong board size. Board size "' + this.size + '", but cells per line "' + Math.sqrt(allKeys.length) + '"');
+    }
+
+    allKeys.forEach(function (key) {
+        var parameters = parameters.cells[key];
+        parameters.squareNumber = parameters.squares[key];
+        parameters.boardSize = self.size;
+        var Cell = new Cell(parameters);
+
+        var coords = Cell.coords.toString();
+        self.cells[coords] = Cell;
+
+        if (Cell.isOpen) {
+            self.openCells[coords] = Cell;
+        } else if (Cell.number) {
+            self.checkedCells[coords] = Cell;
+        }
+
+        if (Cell.getMarks().length) {
+            self.markedCells[coords] = Cell;
+        }
+
+        var row = Cell.coords.row;
+        var col = Cell.coords.col;
+
+        // Fill rows array
+        if (!cellsPerRow[row]) {
+            cellsPerRow[row] = [];
+        }
+        cellsPerRow[row][col] = Cell;
+
+        // Fill cols array
+        if (!cellsPerCol[col]) {
+            cellsPerCol[col] = [];
+        }
+        cellsPerCol[col][row] = Cell;
+
+        // Fill squares array
+        var square = Cell.squareNumber;
+        if (!cellsPerSquare[square]) {
+            cellsPerSquare[square] = [];
+        }
+        cellsPerSquare[square].push(Cell);
+    });
+
+    // Initialize rows
+    this.rows = [];
+    $.each(cellsPerRow, function (row, cells) {
+        self.rows[row] = new CellRow(cells);
+    });
+
+    // Initialize cols
+    this.cols = [];
+    $.each(cellsPerCol, function (col, cells) {
+        self.cols[col] = new CellCol(cells);
+    });
+
+    // Initialize squares
+    this.squares = [];
+    $.each(cellsPerSquare, function (square, cells) {
+        self.squares[square] = new CellSquare(cells);
+    });
+};
+
+/********************************************** /INIT ***/
+
+/********************************************** PUBLIC METHODS ***/
+
+/**
+ * @param row
+ * @param col
+ * @returns Cell
+ */
+Board.prototype.getCellByCoords = function (row, col) {
+    var Coords = new CellCoords(row, col);
+    return this.cells[Coords.toString()];
+};
+
+/********************************************** /PUBLIC METHODS ***/
+
+/********************************************** STATIC METHODS ***/
+
+Board.generate = function (size, callback) {
+    // Here can be logic to choose generator
+    GeneratorSimple.generate(size, callback);
 };
 
 Board.getAllowedSizes = function () {
-    return [4, 6, 9, 12, 16];
+    return sizeMap.allowedSizes;
 };
 
-Board.generate = function (size, callback) {
-    if (this.getAllowedSizes().indexOf(size) == -1) {
-        return callback(new Error('Board size "' + size + '" is not allowed'));
-    }
+/********************************************** /STATIC METHODS ***/
 
-    Board.generateSimpleBoard(size, function (error, board) {
-        if (error) return callback(error);
-        Board.shuffleBoard(board, function (error, board) {
-            if (error) return callback(error);
-            Board.mergeBoardRows(board, function (error, board) {
-                if (error) return callback(error);
-                callback(null, board);
-            });
-        });
-    });
-};
-
-Board.generateSimpleBoard = function (size, callback) {
-    if (this.getAllowedSizes().indexOf(size) == -1) {
-        return callback(new Error('Board size "' + size + '" is not allowed'));
-    }
-    var board = [];
-    var row = Array.apply(null, Array(size)).map(function (_, i) { return i + 1; });
-    for (var i = 0; i < size; i++) {
-        board.push(doOffset(row, countOffset(i, size)));
-    }
-
-    callback(null, board);
-};
-
-Board.shuffleBoard = function (board, callback) {
-    var iterations = 20;
-    var possibleMethods = [
-        'Transposing',
-        'SwapRows',
-        'SwapCols',
-        'SwapSquareRows',
-        'SwapSquareCols'
-    ];
-    var methodsCount = possibleMethods.length;
-    var method = '';
-    var previousMethod = null;
-    for (var i = 0, j = 5; i < iterations; i++, j = 5) {
-        do {
-            method = possibleMethods[math.random(1, methodsCount) - 1];
-        } while (method == previousMethod && j-- > 0);
-        board = Board['shuffleBoardBy' + method](board);
-        previousMethod = method;
-    }
-    callback(null, board);
-};
-
-Board.shuffleBoardByTransposing = function (board) {
-    return transpose(board);
-};
-
-Board.shuffleBoardBySwapRows = function (board) {
-    var size = board.length;
-    var verticalSquares = countVerticalSquares(size);
-    var squareHeight = parseInt(size / verticalSquares);
-    var squareRowNumber = math.random(0, verticalSquares - 1);
-    var rowNumber = math.random(0, squareHeight - 1);
-    var switchRowNumber = parseInt((rowNumber + math.random(1, squareHeight - 1)) % squareHeight);
-    var fromRowNumber = parseInt(squareRowNumber * squareHeight + rowNumber);
-    var toRowNumber = parseInt(squareRowNumber * squareHeight + switchRowNumber);
-
-    var newBoard = extend([], board);
-    newBoard[toRowNumber] = board[fromRowNumber];
-    newBoard[fromRowNumber] = board[toRowNumber];
-    return newBoard;
-};
-
-Board.shuffleBoardBySwapCols = function (board) {
-    var newBoard = [];
-    newBoard = Board.shuffleBoardByTransposing(board);
-    newBoard = Board.shuffleBoardBySwapRows(newBoard);
-    newBoard = Board.shuffleBoardByTransposing(newBoard);
-    return newBoard;
-};
-
-Board.shuffleBoardBySwapSquareRows = function (board) {
-    var size = board.length;
-    var verticalSquares = countVerticalSquares(size);
-    var squareHeight = parseInt(size / verticalSquares);
-    var squareNumber = math.random(0, verticalSquares - 1);
-    var switchSquareNumber = parseInt((squareNumber + math.random(1, verticalSquares - 1)) % verticalSquares);
-    var fromRow = parseInt(squareNumber * squareHeight);
-    var toRow = parseInt(switchSquareNumber * squareHeight);
-
-    var newBoard = extend([], board);
-    for (var i = 0; i < squareHeight; i++) {
-        newBoard[toRow + i] = board[fromRow + i];
-        newBoard[fromRow + i] = board[toRow + i];
-    }
-    return newBoard;
-};
-
-Board.shuffleBoardBySwapSquareCols = function (board) {
-    var newBoard = [];
-    newBoard = Board.shuffleBoardByTransposing(board);
-    newBoard = Board.shuffleBoardBySwapSquareRows(newBoard);
-    newBoard = Board.shuffleBoardByTransposing(newBoard);
-    return newBoard;
-};
-
-Board.mergeBoardRows = function (board, callback) {
-    var mergedBoards = {};
-    board.forEach(function (row, rowNumber) {
-        row.forEach(function (value, colNumber) {
-            var key = Board.getCoordsString(rowNumber + 1, colNumber + 1); // without zeros
-            mergedBoards[key] = value;
-        });
-    });
-    callback(null, mergedBoards);
-};
+/********************************************** FOR TESTS ***/
 
 Board.validateBoardStructure = function (board) {
     var size = Math.sqrt(Object.keys(board).length);
@@ -138,11 +172,11 @@ Board.validateBoardStructure = function (board) {
     }
     for (var coords in board) {
         if (board.hasOwnProperty(coords)) {
-            var coordsArray = this.getCoordsArray(coords);
+            coords = new CellCoords(coords);
             if (
-                !math.inRange(board[coords], 0, size) // can be zero when no entered number
-                || !math.inRange(coordsArray[0], 1, size)
-                || !math.inRange(coordsArray[1], 1, size)
+                !math.inRange(board[coords.toString()], 0, size) // can be zero when no entered number
+                || !math.inRange(coords.row, 1, size)
+                || !math.inRange(coords.col, 1, size)
             ) {
                 return false;
             }
@@ -151,71 +185,6 @@ Board.validateBoardStructure = function (board) {
     return true;
 };
 
-function countVerticalSquares (size) {
-    var verticalSquares = 2; // minimal possible value
-    var possibleVerticalSquares = parseInt(size / 2) - 1; // 16 / 2 = 8 (with height 2) - 1 = 7 ... will be 4 squares
-    while (possibleVerticalSquares > 2) {
-        if (!(size % possibleVerticalSquares)) {
-            verticalSquares = possibleVerticalSquares;
-            break;
-        }
-        possibleVerticalSquares--;
-    }
-    return verticalSquares;
-}
-
-function countOffset(rowNumber, size) {
-    var verticalSquares = countVerticalSquares(size);
-    var squareWidth = verticalSquares; // size / (size / countVerticalSquares)
-    var squareHeight = parseInt(size / verticalSquares);
-    var currentVerticalSquare = parseInt(rowNumber / squareHeight);
-    var offset = ((rowNumber * verticalSquares) + currentVerticalSquare) % size;
-    return offset;
-}
-
-function doOffset (row, offset) {
-    var newRow = extend([], row);
-    while (offset > 0) {
-        newRow.unshift(newRow.pop());
-        offset--;
-    }
-    return newRow;
-}
-
-function transpose(array) {
-    // @link http://stackoverflow.com/questions/4492678/to-swap-rows-with-columns-of-matrix-in-javascript-or-jquery
-
-    // Calculate the width and height of the Array
-    var width = array.length ? array.length : 0,
-        height = array[0] instanceof Array ? array[0].length : 0;
-
-    // In case it is a zero matrix, no transpose routine needed.
-    if (height === 0 || width === 0) {
-        return [];
-    }
-
-    /**
-     * @var {Number} i Counter
-     * @var {Number} j Counter
-     * @var {Array} transposed Transposed data is stored in this array.
-     */
-    var i, j, transposed = [];
-
-    // Loop through every item in the outer array (height)
-    for (i = 0; i < height; i++) {
-
-        // Insert a new row (array)
-        transposed[i] = [];
-
-        // Loop through every item per item in outer array (width)
-        for (j = 0; j < width; j++) {
-
-            // Save transposed data.
-            transposed[i][j] = array[j][i];
-        }
-    }
-
-    return transposed;
-}
+/********************************************** /FOR TESTS ***/
 
 module.exports = Board;

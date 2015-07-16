@@ -16,7 +16,7 @@ function SudokuBoard(container) {
 /********************************************** INIT ***/
 
 SudokuBoard.prototype.init = function () {
-    w.disableSelect(this.board);
+    window.disableSelect(this.board);
 
     this.initCells();
     this.initEvents();
@@ -32,29 +32,29 @@ SudokuBoard.prototype.initCells = function () {
     // Initialize cells
     this.cells = {};
     var allCells = this.container.find('.cell');
-    var size = allCells.length; // TODO: square root
+    var size = parseInt(Math.sqrt(allCells.length));
     allCells.each(function (i, el) {
-        var Cell = new SudokuCell(el, size);
+        var Cell = new Cell(el, size);
         self.cells[Cell.coords.toString()] = Cell;
 
-        var row = Cell.coords.getRow();
-        var col = Cell.coords.getCol();
+        var row = Cell.coords.row;
+        var col = Cell.coords.col;
 
         // Fill rows array
-        if (!cellsPerRow[row].length) {
+        if (!cellsPerRow[row]) {
             cellsPerRow[row] = [];
         }
         cellsPerRow[row][col] = Cell;
 
         // Fill cols array
-        if (!cellsPerCol[col].length) {
+        if (!cellsPerCol[col]) {
             cellsPerCol[col] = [];
         }
         cellsPerCol[col][row] = Cell;
 
         // Fill squares array
-        var square = Cell.getSquareNumber();
-        if (!cellsPerSquare[square].length) {
+        var square = Cell.squareNumber;
+        if (!cellsPerSquare[square]) {
             cellsPerSquare[square] = [];
         }
         cellsPerSquare[square].push(Cell);
@@ -62,24 +62,24 @@ SudokuBoard.prototype.initCells = function () {
 
     // Initialize rows
     this.rows = [];
-    cellsPerRow.each(function (row, cells) {
-        self.rows[row] = new SudokuCellRow(cells);
+    $.each(cellsPerRow, function (row, cells) {
+        self.rows[row] = new Row(cells);
     });
 
     // Initialize cols
     this.cols = [];
-    cellsPerCol.each(function (col, cells) {
-        self.cols[col] = new SudokuCellCol(cells);
+    $.each(cellsPerCol, function (col, cells) {
+        self.cols[col] = new Col(cells);
     });
 
     // Initialize squares
     this.squares = [];
-    cellsPerSquare.each(function (square, cells) {
-        self.squares[square] = new SudokuCellSquare(cells);
+    $.each(cellsPerSquare, function (square, cells) {
+        self.squares[square] = new Square(cells);
     });
 
     // Calculate board size
-    this.size = this.cols.length;
+    this.size = this.cols.length - 1;
 
     if (this.size != size) {
         throw new Error('Wrong board size. Board size "' + allCells.length + '", but cells per line "' + this.size + '"');
@@ -89,7 +89,7 @@ SudokuBoard.prototype.initCells = function () {
 SudokuBoard.prototype.initEvents = function () {
     var self = this;
 
-    this.container.board
+    this.board
         .on('mouseover', '.cell', function () {
             // hover vertical col and horizontal row
             self.hoverColAndRow($(this));
@@ -104,7 +104,7 @@ SudokuBoard.prototype.initEvents = function () {
         .on('mousedown', '.cell', function (e) {
             var Cell = self.findCell(e.currentTarget);
             self.selectCell(Cell);
-            Cell.container.addClass('pushed');
+            //Cell.container.addClass('pushed'); // TODO: move into numpad
             self.hoverNumber(Cell.getNumber());
         })
     ;
@@ -131,7 +131,7 @@ SudokuBoard.prototype.getBoardHash = function () {
 };
 
 SudokuBoard.prototype.findCell = function (el) {
-    var Coords = new SudokuCellCoords(el);
+    var Coords = new Coords(el);
     var Cell = this.cells[Coords.toString()] || null;
 
     if (!Cell) {
@@ -172,7 +172,7 @@ SudokuBoard.prototype.getBoardState = function () {
         'checkedCells': {},
         'markedCells': {}
     };
-    this.cells.each(function (i, Cell) {
+    $.each(this.cells, function (i, Cell) {
         var coords = Cell.coords.toString();
         if (!Cell.isOpen()) {
             state.openCells[coords] = Cell.getNumber();
@@ -189,14 +189,13 @@ SudokuBoard.prototype.getBoardState = function () {
 SudokuBoard.prototype.selectCell = function (cell) {
     if (this.selectedCell) {
         //this.board.find('.cell.selected').removeClass('selected');
-        this.selectedCell.removeClass('selected');
+        this.selectedCell.container.removeClass('selected');
         this.selectedCell = null;
     }
 
     if (cell) {
-        var Cell = this.findCell(cell);
-        Cell.container.addClass('selected');
-        this.selectedCell = Cell;
+        this.selectedCell = this.findCell(cell);
+        this.selectedCell.container.addClass('selected');
     }
 };
 
@@ -258,7 +257,7 @@ SudokuBoard.prototype.clearBoard = function () {
     });
 };
 
-SudokuBoard.prototype.hoverColAndRow = function (cell) {
+SudokuBoard.prototype.hoverColAndRow = function (cell) { // TURNED OFF
     this.board.find('.cell.hover').removeClass('hover');
     if (cell) {
         var Cell = this.findCell(cell);

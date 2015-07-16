@@ -1,5 +1,5 @@
-mixin cell(row, col)
-    - cellClasses = ['row-' + row, 'col-' + col];
+mixin drawCellContainer(Cell)
+    - cellClasses = ['row-' + Cell.row, 'col-' + Cell.col, 'square-' + Cell.squareNumber];
     td.cell(class=cellClasses)
         span.number-container
         - for (var number = 1; number < gameSudoku.getSize(); number++)
@@ -10,4 +10,5 @@ table.sudoku-board(class=boardClasses)
     - for (var row = 1; row <= gameSudoku.getSize(); row++)
         tr
             - for (var col = 1; col <= gameSudoku.getSize(); col++)
-                +cell(row, col)
+                - Cell = gameSudoku.getCellByCoords(row, col)
+                +drawCellContainer(Cell)

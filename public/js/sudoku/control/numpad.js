@@ -5,7 +5,7 @@ function SudokuControlNumpad(container) {
     this.init();
 }
 
-mixin(SudokuControlNumpad, MixinEvent);
+$.extend(SudokuControlNumpad.prototype, MixinEvent);
 
 SudokuControlNumpad.prototype.init = function () {
     this.initSudoku();
@@ -120,14 +120,14 @@ SudokuControlNumpad.prototype.initSudokuEvents = function () {
 
 // TODO: check is OLD code
 
-$Sudoku.getPopupNumpad = function () {
+SudokuControlNumpad.prototype.getPopupNumpad = function () {
     var $numpad = $Sudoku.table.find('.sudoku-numpad').clone().addClass('popup');
     $Sudoku.table.append($numpad);
-    w.disableSelect($numpad);
+    window.disableSelect($numpad);
     return $numpad;
 };
 
-$Sudoku.showPopupNumpad = function () {
+SudokuControlNumpad.prototype.showPopupNumpad = function () {
     $Sudoku.hidePopupNumpad();
     var $cell = $Sudoku.table.find('.cell.pushed'),
         coords = $cell.position(),
@@ -141,6 +141,6 @@ $Sudoku.showPopupNumpad = function () {
     popupNumpad.css('left', coords.left - (popupNumpad.outerWidth() / 2));
 };
 
-$Sudoku.hidePopupNumpad = function () {
+SudokuControlNumpad.prototype.hidePopupNumpad = function () {
     $Sudoku.table.find('.sudoku-numpad.popup').remove();
 };

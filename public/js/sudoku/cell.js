@@ -1,25 +1,22 @@
-function SudokuCell(container, boardSize) {
+function SudokuCell (container, boardSize) {
     this.container = $(container); // .cell
     this.boardSize = boardSize;
 
-    this.number = parseInt(this.container.find('.number-container').html());
+    // Private property. Use getter/setter for access
+    this._number = parseInt(this.container.find('.number-container').html()) || 0;
 
-    this.coords = new SudokuCellCoords(this);
-    this.squareNumber = parseInt(this.container.data('square'));
+    this.coords = new Coords(this);
+    this.squareNumber = parseInt(this.getSquareFromCssClass(this.container.attr('class')));
 }
 
-SudokuCell.prototype.getSquareNumber = function () {
-    return this.squareNumber;
-};
-
 SudokuCell.prototype.getNumber = function () {
-    return this.number;
+    return this._number;
 };
 
 SudokuCell.prototype.setNumber = function (number) {
-    this.number = parseInt(number);
-    this.container.find('.number-container').html(this.number > 0 ? this.number : '');
-    if (this.number > 0) {
+    this._number = parseInt(number);
+    this.container.find('.number-container').html(this._number > 0 ? this._number : '');
+    if (this._number > 0) {
         this.container.removeClass('empty');
     } else {
         this.container.addClass('empty');
@@ -96,3 +93,8 @@ SudokuCell.prototype.isOpen = function () {
 SudokuCell.prototype.isEmpty = function () {
     return !!this.container.hasClass('empty');
 };
+
+SudokuCell.prototype.getSquareFromCssClass = function (cssClassesString) {
+    return /square-([0-9]+)/.exec(cssClassesString)[1];
+};
+

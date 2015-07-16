@@ -21,13 +21,15 @@ function SudokuCellCoords(row, col) {
         var coords = row.split(this.separator, 2);
         this.row = coords[0];
         this.col = coords[1];
-    } else if (row.prototype == SudokuCell) {
-        this.row = row.container.data('row');
-        this.col = row.container.data('col');
+    } else if (Cell.prototype.isPrototypeOf(row)) {
+        var classesString = row.container.attr('class');
+        this.row = this.getRowFromCssClass(classesString);
+        this.col = this.getColFromCssClass(classesString);
     } else {
         var $el = $(row);
-        this.row = $el.data('row') || 0;
-        this.col = $el.data('col') || 0;
+        var classesString = $el.attr('class');
+        this.row = this.getRowFromCssClass(classesString);
+        this.col = this.getColFromCssClass(classesString);
     }
 
     this.row = parseInt(this.row);
@@ -38,20 +40,8 @@ function SudokuCellCoords(row, col) {
     }
 }
 
-SudokuCellCoords.prototype.getRow = function () {
-    return this.row;
-};
-
-SudokuCellCoords.prototype.getCol = function () {
-    return this.col;
-};
-
 SudokuCellCoords.prototype.toString = function () {
     return '' + this.row + this.separator + this.col;
-};
-
-SudokuCellCoords.prototype.toArray = function () {
-    return [this.row, this.col];
 };
 
 SudokuCellCoords.prototype.getRowCssClass = function () {
@@ -60,4 +50,12 @@ SudokuCellCoords.prototype.getRowCssClass = function () {
 
 SudokuCellCoords.prototype.getColCssClass = function () {
     return 'col-' + this.col;
+};
+
+SudokuCellCoords.prototype.getRowFromCssClass = function (cssClassesString) {
+    return /row-([0-9]+)/.exec(cssClassesString)[1];
+};
+
+SudokuCellCoords.prototype.getColFromCssClass = function (cssClassesString) {
+    return /col-([0-9]+)/.exec(cssClassesString)[1];
 };

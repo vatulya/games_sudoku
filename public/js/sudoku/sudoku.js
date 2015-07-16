@@ -18,7 +18,7 @@ function Sudoku(ws, board) {
     this.init();
 }
 
-mixin(Sudoku, MixinEvent);
+$.extend(Sudoku.prototype, MixinEvent);
 
 /********************************************** INIT ***/
 
@@ -29,12 +29,12 @@ Sudoku.prototype.init = function () {
 
     //$(document).trigger('Sudoku:initialize', [this]); // Global event
 
-    this.board.data('Sudoku', this);
+    this.board.container.data('Sudoku', this);
     this.board.container.trigger('Sudoku:initialize', [this]); // Container event
 };
 
 Sudoku.prototype.initProperties = function () {
-    this.hash = this.board.data('hash');
+    this.hash = this.board.container.data('hash');
 
     for (var number = 0; number <= this.getSize(); number++) {
         this.allowedNumbers[number] = true; // by default all numbers are allowed
