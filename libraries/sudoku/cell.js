@@ -17,7 +17,7 @@ function Cell (parameters) {
     this.coords = null;
     this.squareNumber = 0;
     this.boardSize = 0;
-    this._number = 0;
+    this.number = 0;
     this.isOpen = false;
     this.marks = [];
 
@@ -28,7 +28,7 @@ Cell.prototype.init = function (parameters) {
     this.coords = new CellCoords(parameters.coords || '');
     this.squareNumber = parseInt(parameters.squareNumber || 0);
     this.boardSize = parseInt(parameters.boardSize || 0);
-    this._number = parseInt(parameters._number || 0);
+    this.number = parseInt(parameters.number || 0);
     this.isOpen = !!(parameters.isOpen || false);
     this.marks = parameters.marks || [];
 
@@ -41,7 +41,7 @@ Cell.prototype.init = function (parameters) {
 
 Cell.prototype.setNumber = function (number) {
     if (!this.checkNumber(number)) throw new Error('Wrong number "' + number + '". Board size: "' + this.boardSize + '".');
-    this._number = parseInt(number);
+    this.number = parseInt(number);
     return this;
 };
 

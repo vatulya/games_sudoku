@@ -12,20 +12,17 @@ var sizeMap = require('./board/sizesMap');
 /**
  * {
  *      size: 9,
- *      cells: {
- *          "1_1": {
- *              coords: "1_1",
- *              number: 1,
- *              isOpen: true,
- *              marks: []
- *          }
- *          "1_2": {
- *              coords: "1_2",
- *              number: 5,
- *              isOpen: false,
- *              marks: [1, 4]
- *          }
- *          ...
+ *      openedCells: {
+ *          "1_1": 1,
+ *          "1_2": 3
+ *      },
+ *      checkedCells: {
+ *          "2_1": 1,
+ *          "2_2": 5,
+ *      },
+ *      markedCells: {
+ *          "3_1": [1],
+ *          "3_2": [5, 6]
  *      },
  *      squares: {
  *          "1_1": 1,
@@ -40,7 +37,7 @@ function Board (parameters) {
 
     this.size = 0;
 
-    this.openCells = {};
+    this.openedCells = {};
     this.checkedCells = {};
     this.markedCells = {};
 
@@ -61,59 +58,76 @@ Board.prototype.init = function (parameters) {
 };
 
 Board.prototype.initCells = function (parameters) {
-    var self = this;
-
     var cellsPerRow = [];
     var cellsPerCol = [];
     var cellsPerSquare = [];
 
-    var allKeys = Object.keys(parameters.cells);
+    this.openedCells = {};
+    this.checkedCells = {};
+    this.markedCells = {};
 
-    if (this.size != allKeys.length) {
-        throw new Error('Wrong board size. Board size "' + this.size + '", but cells per line "' + Math.sqrt(allKeys.length) + '"');
+    this.cells = {};
+    this.rows = [];
+    this.cols = [];
+    this.squares = [];
+
+    var squareSize = Math.sqrt(this.size);
+    for (var row = 1; row <= squareSize; row++) {
+        for (var col = 1; col <= squareSize; col++) {
+            var coords = new CellCoords(row, col);
+            var key = coords.toString();
+
+            var cellParameters = {
+                coords: coords,
+                squareNumber: parameters.squares[key],
+                boardSize: this.size,
+                number: 0,
+                isOpen: true,
+                marks: []
+            };
+
+            if (parameters.openedCells.hasOwnProperty(key)) {
+                cellParameters.isOpen = true;
+                cellParameters.number = parameters.openedCells[key];
+            } else {
+                if (parameters.checkedCells.hasOwnProperty(key)) {
+                    cellParameters.number = parameters.checkedCells[key];
+                }
+                if (parameters.markedCells.hasOwnProperty(key)) {
+                    cellParameters.marks = parameters.markedCells[key];
+                }
+            }
+
+            var Cell = new Cell(parameters);
+
+            if (Cell.isOpen) {
+                this.openedCells[coords] = Cell;
+            } else {
+                if (Cell.number) {
+                    this.checkedCells[coords] = Cell;
+                }
+                if (Cell.marks.length) {
+                    this.markedCells[coords] = Cell;
+                }
+            }
+
+            this.cells[coords] = Cell;
+
+            if (!cellsPerRow[row]) {
+                cellsPerRow[row] = [];
+            }
+            if (!cellsPerCol[col]) {
+                cellsPerCol[col] = [];
+            }
+            if (!cellsPerSquare[Cell.squareNumber]) {
+                cellsPerSquare[Cell.squareNumber] = [];
+            }
+
+            cellsPerRow[row][col] = Cell;
+            cellsPerCol[col][row] = Cell;
+            cellsPerSquare[Cell.squareNumber].push(Cell);
+        }
     }
-
-    allKeys.forEach(function (key) {
-        var parameters = parameters.cells[key];
-        parameters.squareNumber = parameters.squares[key];
-        parameters.boardSize = self.size;
-        var Cell = new Cell(parameters);
-
-        var coords = Cell.coords.toString();
-        self.cells[coords] = Cell;
-
-        if (Cell.isOpen) {
-            self.openCells[coords] = Cell;
-        } else if (Cell.number) {
-            self.checkedCells[coords] = Cell;
-        }
-
-        if (Cell.getMarks().length) {
-            self.markedCells[coords] = Cell;
-        }
-
-        var row = Cell.coords.row;
-        var col = Cell.coords.col;
-
-        // Fill rows array
-        if (!cellsPerRow[row]) {
-            cellsPerRow[row] = [];
-        }
-        cellsPerRow[row][col] = Cell;
-
-        // Fill cols array
-        if (!cellsPerCol[col]) {
-            cellsPerCol[col] = [];
-        }
-        cellsPerCol[col][row] = Cell;
-
-        // Fill squares array
-        var square = Cell.squareNumber;
-        if (!cellsPerSquare[square]) {
-            cellsPerSquare[square] = [];
-        }
-        cellsPerSquare[square].push(Cell);
-    });
 
     // Initialize rows
     this.rows = [];
@@ -152,13 +166,35 @@ Board.prototype.getCellByCoords = function (row, col) {
 
 /********************************************** STATIC METHODS ***/
 
-Board.generate = function (size, callback) {
+Board.generate = function (parameters, callback) {
     // Here can be logic to choose generator
-    GeneratorSimple.generate(size, callback);
+    GeneratorSimple.generate(parameters.size, callback);
 };
 
 Board.getAllowedSizes = function () {
     return sizeMap.allowedSizes;
+};
+
+Board.hideCells = function (boardHash, countCellsToHide) {
+    // TODO: hide cells in filled board
+    return boardHash;
+};
+
+Board.convertBoardHashToParameters = function (boardHash, squares) {
+    var openedCells = {};
+
+    var allKeys = Object.keys(boardHash);
+    allKeys.forEach(function (key) {
+        openedCells[key] = boardHash[key];
+    });
+
+    return {
+        size: allKeys.length,
+        openedCells: openedCells,
+        checkedCells: {},
+        markedCells: {},
+        squares: squares
+    };
 };
 
 /********************************************** /STATIC METHODS ***/

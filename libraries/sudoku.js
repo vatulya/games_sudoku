@@ -1,5 +1,5 @@
 var ModelSudoku = require('./../models/sudoku');
-var SudokuBoard = require('./sudoku/board');
+    var SudokuBoard = require('./sudoku/board');
 
 function Sudoku (modelSudoku) {
     this.modelSudoku = modelSudoku;
@@ -12,7 +12,14 @@ function Sudoku (modelSudoku) {
 /********************************************** INIT ***/
 
 Sudoku.prototype.init = function () {
-    this.board = new SudokuBoard(this.modelSudoku);
+    var parameters = {
+        size: this.modelSudoku.size,
+        openedCells: this.modelSudoku.openedCells,
+        checkedCells: this.modelSudoku.checkedCells,
+        markedCells: this.modelSudoku.markedCells,
+        squares: this.modelSudoku.squares
+    };
+    this.board = new SudokuBoard(parameters);
     //this.history = new SudokuHistory(this.modelSudoku);
 };
 
@@ -40,16 +47,23 @@ Sudoku.create = function (hash, callback) {
     if (typeof hash != 'string' || !hash) {
         return callback(new Error('Wrong hash'));
     }
-    SudokuBoard.generate(hash, function (error, board) {
+
+    // TODO: add support another sizes and parameters like custom squares configuration
+    var parameters = {
+        size: 9
+    };
+    SudokuBoard.generate(parameters, function (error, simpleBoardHash, squares) {
         if (error) return callback(error);
 
-        // TODO: hide cells in filled board
-        // TODO: convert board to parameters and create object Board
-        // TODO: create and call method Board.toHash() and save into Model
-        // TODO: think about memory leak with two object of Board
+        simpleBoardHash = SudokuBoard.hideCells(simpleBoardHash, 15/*difficulty*/);
+
+        var parameters = SudokuBoard.convertBoardHashToParameters(simpleBoardHash, squares);
+        var board = new SudokuBoard(parameters);
+
+        // TODO: to think about memory leak with two object of Board
         var ModelGame = new ModelSudoku();
         ModelGame.set('hash', hash);
-        ModelGame.set('fields', board);
+        ModelGame.setBoard(board);
         ModelGame.save(function (error) {
             if (error) return callback(error);
             var Sudoku = new Sudoku(ModelGame); // TODO: check memory leak

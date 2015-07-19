@@ -143,7 +143,7 @@ SudokuBoard.prototype.findCell = function (el) {
 
 SudokuBoard.prototype.fillBoard = function (cells) {
     var self = this;
-    $.each(cells.openCells || {}, function(coords, number) {
+    $.each(cells.openedCells || {}, function(coords, number) {
         var Cell = self.findCell(coords);
         Cell.setNumber(number);
         Cell.container.removeClass('open').addClass('locked');
@@ -168,14 +168,14 @@ SudokuBoard.prototype.hideBoard = function () {
 
 SudokuBoard.prototype.getBoardState = function () {
     var state = {
-        'openCells': {},
-        'checkedCells': {},
-        'markedCells': {}
+        openedCells: {},
+        checkedCells: {},
+        markedCells: {}
     };
     $.each(this.cells, function (i, Cell) {
         var coords = Cell.coords.toString();
         if (!Cell.isOpen()) {
-            state.openCells[coords] = Cell.getNumber();
+            state.openedCells[coords] = Cell.getNumber();
         } else {
             if (Cell.getNumber() > 0) {
                 state.checkedCells[coords] = Cell.getNumber();
