@@ -48,3 +48,5 @@ Coords.prototype.getRowFromCssClass = function (cssClassesString) {
 Coords.prototype.getColFromCssClass = function (cssClassesString) {
     return /col-([0-9]+)/.exec(cssClassesString)[1];
 };
+
+module.exports = Coords;

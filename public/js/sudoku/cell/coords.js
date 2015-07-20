@@ -21,7 +21,7 @@ function SudokuCellCoords(row, col) {
         var coords = row.split(this.separator, 2);
         this.row = coords[0];
         this.col = coords[1];
-    } else if (Cell.prototype.isPrototypeOf(row)) {
+    } else if (SudokuCell.prototype.isPrototypeOf(row)) {
         var classesString = row.container.attr('class');
         this.row = this.getRowFromCssClass(classesString);
         this.col = this.getColFromCssClass(classesString);

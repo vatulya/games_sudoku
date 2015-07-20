@@ -58,6 +58,8 @@ Board.prototype.init = function (parameters) {
 };
 
 Board.prototype.initCells = function (parameters) {
+    var self = this;
+
     var cellsPerRow = [];
     var cellsPerCol = [];
     var cellsPerSquare = [];
@@ -71,14 +73,13 @@ Board.prototype.initCells = function (parameters) {
     this.cols = [];
     this.squares = [];
 
-    var squareSize = Math.sqrt(this.size);
-    for (var row = 1; row <= squareSize; row++) {
-        for (var col = 1; col <= squareSize; col++) {
+    for (var row = 1; row <= this.size; row++) {
+        for (var col = 1; col <= this.size; col++) {
             var coords = new CellCoords(row, col);
             var key = coords.toString();
 
             var cellParameters = {
-                coords: coords,
+                coords: coords.toString(),
                 squareNumber: parameters.squares[key],
                 boardSize: this.size,
                 number: 0,
@@ -98,20 +99,20 @@ Board.prototype.initCells = function (parameters) {
                 }
             }
 
-            var Cell = new Cell(parameters);
+            var cell = new Cell(cellParameters);
 
-            if (Cell.isOpen) {
-                this.openedCells[coords] = Cell;
+            if (cell.isOpen) {
+                this.openedCells[coords] = cell;
             } else {
-                if (Cell.number) {
-                    this.checkedCells[coords] = Cell;
+                if (cell.number) {
+                    this.checkedCells[coords] = cell;
                 }
-                if (Cell.marks.length) {
-                    this.markedCells[coords] = Cell;
+                if (cell.marks.length) {
+                    this.markedCells[coords] = cell;
                 }
             }
 
-            this.cells[coords] = Cell;
+            this.cells[coords] = cell;
 
             if (!cellsPerRow[row]) {
                 cellsPerRow[row] = [];
@@ -123,28 +124,28 @@ Board.prototype.initCells = function (parameters) {
                 cellsPerSquare[Cell.squareNumber] = [];
             }
 
-            cellsPerRow[row][col] = Cell;
-            cellsPerCol[col][row] = Cell;
-            cellsPerSquare[Cell.squareNumber].push(Cell);
+            cellsPerRow[row][col] = cell;
+            cellsPerCol[col][row] = cell;
+            cellsPerSquare[Cell.squareNumber].push(cell);
         }
     }
 
     // Initialize rows
     this.rows = [];
-    $.each(cellsPerRow, function (row, cells) {
-        self.rows[row] = new CellRow(cells);
+    cellsPerRow.forEach(function (row) {
+        self.rows[row] = new CellRow(cellsPerRow[row]);
     });
 
     // Initialize cols
     this.cols = [];
-    $.each(cellsPerCol, function (col, cells) {
-        self.cols[col] = new CellCol(cells);
+    cellsPerCol.forEach(function (col) {
+        self.cols[col] = new CellCol(cellsPerCol[col]);
     });
 
     // Initialize squares
     this.squares = [];
-    $.each(cellsPerSquare, function (square, cells) {
-        self.squares[square] = new CellSquare(cells);
+    cellsPerSquare.forEach(function (square) {
+        self.squares[square] = new CellSquare(cellsPerSquare[square]);
     });
 };
 
@@ -189,7 +190,7 @@ Board.convertBoardHashToParameters = function (boardHash, squares) {
     });
 
     return {
-        size: allKeys.length,
+        size: parseInt(Math.sqrt(allKeys.length)),
         openedCells: openedCells,
         checkedCells: {},
         markedCells: {},

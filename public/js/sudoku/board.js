@@ -34,7 +34,7 @@ SudokuBoard.prototype.initCells = function () {
     var allCells = this.container.find('.cell');
     var size = parseInt(Math.sqrt(allCells.length));
     allCells.each(function (i, el) {
-        var Cell = new Cell(el, size);
+        var Cell = new SudokuCell(el, size);
         self.cells[Cell.coords.toString()] = Cell;
 
         var row = Cell.coords.row;
@@ -63,19 +63,19 @@ SudokuBoard.prototype.initCells = function () {
     // Initialize rows
     this.rows = [];
     $.each(cellsPerRow, function (row, cells) {
-        self.rows[row] = new Row(cells);
+        self.rows[row] = new SudokuCellRow(cells);
     });
 
     // Initialize cols
     this.cols = [];
     $.each(cellsPerCol, function (col, cells) {
-        self.cols[col] = new Col(cells);
+        self.cols[col] = new SudokuCellCol(cells);
     });
 
     // Initialize squares
     this.squares = [];
     $.each(cellsPerSquare, function (square, cells) {
-        self.squares[square] = new Square(cells);
+        self.squares[square] = new SudokuCellSquare(cells);
     });
 
     // Calculate board size
@@ -131,7 +131,7 @@ SudokuBoard.prototype.getBoardHash = function () {
 };
 
 SudokuBoard.prototype.findCell = function (el) {
-    var Coords = new Coords(el);
+    var Coords = new SudokuCellCoords(el);
     var Cell = this.cells[Coords.toString()] || null;
 
     if (!Cell) {

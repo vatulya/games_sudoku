@@ -9,3 +9,5 @@ Col.prototype.checkCellsStructure = function () {
     // TODO: check cells
     return true;
 };
+
+module.exports = Col;

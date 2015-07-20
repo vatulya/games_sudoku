@@ -3,6 +3,11 @@ var util = require('util');
 var Group = require('./group');
 
 function Square() {}
-util.inherits(Col, Group);
+util.inherits(Square, Group);
 
-Square.prototype = new SudokuCellGroup();
+Square.prototype.checkCellsStructure = function () {
+    // TODO: check cells
+    return true;
+};
+
+module.exports = Square;

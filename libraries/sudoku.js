@@ -66,8 +66,8 @@ Sudoku.create = function (hash, callback) {
         ModelGame.setBoard(board);
         ModelGame.save(function (error) {
             if (error) return callback(error);
-            var Sudoku = new Sudoku(ModelGame); // TODO: check memory leak
-            callback(null, Sudoku);
+            var sudoku = new Sudoku(ModelGame); // TODO: check memory leak
+            callback(null, sudoku);
         });
     });
 };

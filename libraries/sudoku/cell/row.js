@@ -9,3 +9,5 @@ Row.prototype.checkCellsStructure = function () {
     // TODO: check cells
     return true;
 };
+
+module.exports = Row;

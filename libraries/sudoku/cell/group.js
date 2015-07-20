@@ -1,4 +1,4 @@
-function SudokuCellGroup(cells) {
+function Group(cells) {
     this.cells = cells; // [Cell]
 
     if (!this.checkCellsStructure()) {
@@ -6,12 +6,12 @@ function SudokuCellGroup(cells) {
     }
 }
 
-SudokuCellGroup.prototype.checkCellsStructure = function () {
+Group.prototype.checkCellsStructure = function () {
     return true;
 };
 
-SudokuCellGroup.prototype.isCorrect = function () {
+Group.prototype.isCorrect = function () {
     return true;
 };
 
-module.exports = Cell;
+module.exports = Group;

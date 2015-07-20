@@ -5,7 +5,7 @@ function SudokuCell (container, boardSize) {
     // Private property. Use getter/setter for access
     this._number = parseInt(this.container.find('.number-container').html()) || 0;
 
-    this.coords = new Coords(this);
+    this.coords = new SudokuCellCoords(this);
     this.squareNumber = parseInt(this.getSquareFromCssClass(this.container.attr('class')));
 }
 

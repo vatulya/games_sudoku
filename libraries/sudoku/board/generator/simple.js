@@ -11,13 +11,13 @@ GeneratorSimple.generate = function (size, callback) {
         return callback(new Error('Board size "' + size + '" is not allowed'));
     }
 
-    GeneratorSimple.generateSimpleBoard(size, function (error, board) {
+    GeneratorSimple.generateSimpleBoard(size, function (error, board, squares) {
         if (error) return callback(error);
         GeneratorSimple.shuffleBoard(board, function (error, board) {
             if (error) return callback(error);
             GeneratorSimple.mergeBoardRows(board, function (error, board) {
                 if (error) return callback(error);
-                callback(null, board);
+                callback(null, board, squares);
             });
         });
     });
@@ -28,12 +28,21 @@ GeneratorSimple.generateSimpleBoard = function (size, callback) {
         return callback(new Error('Board size "' + size + '" is not allowed'));
     }
     var board = [];
-    var row = Array.apply(null, Array(size)).map(function (_, i) { return i + 1; });
+    var rowArray = Array.apply(null, Array(size)).map(function (_, i) { return i + 1; });
     for (var i = 0; i < size; i++) {
-        board.push(doOffset(row, countOffset(i, size)));
+        board.push(doOffset(rowArray, countOffset(i, size)));
     }
 
-    callback(null, board);
+    var squares = {};
+    var coords;
+    for (var row = 0; row < size; row++) {
+        for (var col = 0; col < size; col++) {
+            coords = new Coords(row + 1, col + 1);
+            squares[coords.toString()] = sizeMap.map[size].map[row][col];
+        }
+    }
+
+    callback(null, board, squares);
 };
 
 GeneratorSimple.shuffleBoard = function (board, callback) {
@@ -52,7 +61,7 @@ GeneratorSimple.shuffleBoard = function (board, callback) {
         do {
             method = possibleMethods[math.random(1, methodsCount) - 1];
         } while (method == previousMethod && j-- > 0);
-        board = Board['shuffleBoardBy' + method](board);
+        board = this['shuffleBoardBy' + method](board);
         previousMethod = method;
     }
     callback(null, board);
