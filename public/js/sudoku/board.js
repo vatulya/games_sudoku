@@ -58,6 +58,10 @@ SudokuBoard.prototype.initCells = function () {
             cellsPerSquare[square] = [];
         }
         cellsPerSquare[square].push(Cell);
+
+        if (square % 2) {
+            Cell.container.addClass('gray');
+        }
     });
 
     // Initialize rows
@@ -141,29 +145,32 @@ SudokuBoard.prototype.findCell = function (el) {
     return Cell;
 };
 
-SudokuBoard.prototype.fillBoard = function (cells) {
+SudokuBoard.prototype.fillBoard = function (board) {
     var self = this;
-    $.each(cells.openedCells || {}, function(coords, number) {
+    $.each(board.openedCells || {}, function(coords, number) {
         var Cell = self.findCell(coords);
         Cell.setNumber(number);
-        Cell.container.removeClass('open').addClass('locked');
+        Cell.container.removeClass('open marks').addClass('locked');
     });
-    $.each(cells.checkedCells || {}, function(coords, number) {
+    $.each(board.checkedCells || {}, function(coords, number) {
         var Cell = self.findCell(coords);
         Cell.setNumber(number);
     });
-    $.each(cells.markedCells || {}, function(coords, marks) {
+    $.each(board.markedCells || {}, function(coords, marks) {
         var Cell = self.findCell(coords);
         Cell.setMarks(marks);
+        if (Cell.getMarks() && !Cell.getNumber()) {
+            Cell.container.addClass('marks');
+        }
     });
 };
 
 SudokuBoard.prototype.showBoard = function () {
-    this.board.removeClass('hide-board');
+    this.board.removeClass('hide-game');
 };
 
 SudokuBoard.prototype.hideBoard = function () {
-    this.board.addClass('hide-board');
+    this.board.addClass('hide-game');
 };
 
 SudokuBoard.prototype.getBoardState = function () {

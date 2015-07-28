@@ -71,7 +71,7 @@ SudokuCell.prototype.toggleMark = function (mark) {
 SudokuCell.prototype.getMarks = function () {
     var marks = [];
     for (var number = 1; number <= this.boardSize; number++) {
-        if (this.hasClass('mark-' + number)) {
+        if (this.container.hasClass('mark-' + number)) {
             marks.push(number);
         }
     }

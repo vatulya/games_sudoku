@@ -35,7 +35,7 @@ var sizeMap = require('./board/sizesMap');
  */
 function Board (parameters) {
 
-    this.size = 0;
+    this.size = 0; // 4, 6, 9, ...
 
     this.openedCells = {};
     this.checkedCells = {};
@@ -83,15 +83,16 @@ Board.prototype.initCells = function (parameters) {
                 squareNumber: parameters.squares[key],
                 boardSize: this.size,
                 number: 0,
-                isOpen: true,
+                isOpen: false,
                 marks: []
             };
 
-            if (parameters.openedCells.hasOwnProperty(key)) {
+            if (parameters.openedCells.hasOwnProperty(key) && this.checkNumber(parameters.openedCells[key])) {
                 cellParameters.isOpen = true;
                 cellParameters.number = parameters.openedCells[key];
             } else {
-                if (parameters.checkedCells.hasOwnProperty(key)) {
+                // Cell can't be open and checked. Cell can't be open and marked
+                if (parameters.checkedCells.hasOwnProperty(key) && this.checkNumber(parameters.checkedCells[key])) {
                     cellParameters.number = parameters.checkedCells[key];
                 }
                 if (parameters.markedCells.hasOwnProperty(key)) {
@@ -163,6 +164,33 @@ Board.prototype.getCellByCoords = function (row, col) {
     return this.cells[Coords.toString()];
 };
 
+Board.prototype.toHash = function () {
+    var self = this;
+
+    var hash = {
+        openedCells: {},
+        checkedCells: {},
+        markedCells: {}
+    };
+
+    Object.keys(this.openedCells).forEach(function (key) {
+        hash.openedCells[key] = self.openedCells[key].number;
+    });
+    Object.keys(this.checkedCells).forEach(function (key) {
+        hash.checkedCells[key] = self.checkedCells[key].number;
+    });
+    Object.keys(this.markedCells).forEach(function (key) {
+        hash.markedCells[key] = self.markedCells[key].marks;
+    });
+
+    return hash;
+};
+
+Board.prototype.checkNumber = function (number) {
+    number = parseInt(number);
+    return !!(0 < number && number <= this.size);
+};
+
 /********************************************** /PUBLIC METHODS ***/
 
 /********************************************** STATIC METHODS ***/
@@ -177,7 +205,13 @@ Board.getAllowedSizes = function () {
 };
 
 Board.hideCells = function (boardHash, countCellsToHide) {
-    // TODO: hide cells in filled board
+    var allKeys = Object.keys(boardHash);
+    var index;
+    for ( ; countCellsToHide > 0; countCellsToHide--) {
+        index = math.random(0, allKeys.length);
+        boardHash[allKeys[index]] = 0;
+        allKeys.splice(index, 1);
+    }
     return boardHash;
 };
 

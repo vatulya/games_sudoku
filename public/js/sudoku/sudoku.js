@@ -31,6 +31,8 @@ Sudoku.prototype.init = function () {
 
     this.board.container.data('Sudoku', this);
     this.board.container.trigger('Sudoku:initialize', [this]); // Container event
+
+    this.loadBoard();
 };
 
 Sudoku.prototype.initProperties = function () {
@@ -52,7 +54,6 @@ Sudoku.prototype.initEvents = function () {
 
     this.ws
         .on('open', function (data) {
-            self.loadBoard();
         })
         .on('close', function (data) {
             self._stopPing();
@@ -64,8 +65,8 @@ Sudoku.prototype.initEvents = function () {
             self.forceRefresh(data['reason'] || '');
         })
 
-        .on('loadBoard', this.checkSystemDataResponse(this.loadBoardResponse))
-        .on('checkBoard', this.checkSystemDataResponse(this.checkBoardResponse))
+        .on('loadBoard', this.checkSystemDataResponse(this.loadBoardResponse.bind(this)))
+        .on('checkBoard', this.checkSystemDataResponse(this.checkBoardResponse.bind(this)))
     ;
 };
 
@@ -92,6 +93,7 @@ Sudoku.prototype.checkSystemDataResponse = function (callback) {
     return function (response) {
         if (self.systemDataResponse(response)) {
             callback(response);
+            //callback.call(self, response);
         }
     };
 };
