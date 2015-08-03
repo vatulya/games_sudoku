@@ -1,29 +1,24 @@
-var ModelSudoku = require('./../models/sudoku');
-var SudokuBoard = require('./sudoku/board');
+var extend = require('util')._extend;
 
-function Sudoku (modelSudoku) {
+var ModelSudoku = require('./../models/sudoku'),
+    ModelSudokuBoard = require('./../models/sudoku/board'),
+    SudokuBoard = require('./sudoku/board'),
+    SudokuHistory = require('./sudoku/history');
+
+function Sudoku(modelSudoku, parameters) {
     this.modelSudoku = modelSudoku;
     this.board = null;
     this.history = null;
 
-    this.init();
+    if (typeof parameters === 'object') {
+        if (parameters.hasOwnProperty('board') && SudokuBoard.isPrototypeOf(parameters.board)) {
+            this.board = parameters.board;
+        }
+        if (parameters.hasOwnProperty('history') && SudokuHistory.isPrototypeOf(parameters.history)) {
+            this.board = parameters.history;
+        }
+    }
 }
-
-/********************************************** INIT ***/
-
-Sudoku.prototype.init = function () {
-    var parameters = {
-        size: this.modelSudoku.size,
-        openedCells: this.modelSudoku.openedCells,
-        checkedCells: this.modelSudoku.checkedCells || {},
-        markedCells: this.modelSudoku.markedCells || {},
-        squares: this.modelSudoku.squares
-    };
-    this.board = new SudokuBoard(parameters);
-    //this.history = new SudokuHistory(this.modelSudoku);
-};
-
-/********************************************** /INIT ***/
 
 /********************************************** PROTECTED METHODS ***/
 
@@ -31,8 +26,8 @@ Sudoku.prototype.getSystemData = function () {
     return {
         _system: {
             gameHash: this.getHash(),
-            undoMove: {}, // this.history.undo
-            redoMove: {}, // this.history.redo
+            undoMove: this.history.undo,
+            redoMove: this.history.redo,
             duration: 15, // this.duration,
             microtime: new Date().getTime()
         }
@@ -55,11 +50,29 @@ Sudoku.prototype.getCellByCoords = function (row, col) {
 };
 
 Sudoku.prototype.doUserAction = function (data, callback) {
-    // TODO: remove open cells from checked and marked in data
-    // TODO: set checked and marked
-    // 
-    this.board.applyUserAction(data);
-    var a = 1;
+    var diffCheckedCells = {},
+        diffMarkedCells = {};
+
+    if (!this.board.isCorrectParameters(data || {})) {
+        return callback(new Error('Wrong user action data'));
+    }
+
+    diffCheckedCells = this.history.getDiff(this.board.checkedCells, data.checkedCells || {});
+    diffMarkedCells = this.history.getDiff(this.board.markedCells, data.markedCells || {});
+
+    if (Object.keys(diffCheckedCells).length || Object.keys(diffMarkedCells).length) {
+        if (this.board.applyCheckedAndMarkedCells(data.checkedCells, data.markedCells)) {
+            if (this.history.addAction({checkedCells: diffCheckedCells, markedCells: diffMarkedCells})) {
+                this.modelSudoku.setBoard(this.board.toHash());
+                this.modelSudoku.save(function (error) {
+                    if (error) { return callback(error); }
+                    callback(null);
+                });
+            }
+        }
+    }
+
+    callback(new Error('Saving data error'));
 };
 
 /********************************************** PUBLIC METHODS ***/
@@ -67,40 +80,57 @@ Sudoku.prototype.doUserAction = function (data, callback) {
 /********************************************** STATIC METHODS ***/
 
 Sudoku.create = function (hash, callback) {
-    if (typeof hash != 'string' || !hash) {
+    var parameters,
+        sudoku,
+        modelSudoku;
+
+    if (typeof hash !== 'string' || !hash) {
         return callback(new Error('Wrong hash'));
     }
 
-    // TODO: add support another sizes and parameters like custom squares configuration
-    var parameters = {
+    modelSudoku = new ModelSudoku();
+    modelSudoku.set('hash', hash);
+
+    sudoku = new Sudoku(modelSudoku);
+
+    // Sync set board and set history
+    parameters = {
         size: 9
     };
-    SudokuBoard.generate(parameters, function (error, simpleBoardHash, squares) {
-        if (error) return callback(error);
+    SudokuBoard.create(parameters, function (error, sudokuBoard) {
+        if (error) { return callback(error); }
 
-        simpleBoardHash = SudokuBoard.hideCells(simpleBoardHash, 15/*difficulty*/);
+        modelSudoku.set('boardId', sudokuBoard.getId());
 
-        var parameters = SudokuBoard.convertBoardHashToParameters(simpleBoardHash, squares);
-        var board = new SudokuBoard(parameters);
+        SudokuHistory.create(function (error, sudokuHistory) {
+            if (error) { return callback(error); }
 
-        // TODO: to think about memory leak with two object of Board
-        var modelSudoku = new ModelSudoku();
-        modelSudoku.set('hash', hash);
-        modelSudoku.setBoard(board);
-        modelSudoku.save(function (error) {
-            if (error) return callback(error);
-            var sudoku = new Sudoku(modelSudoku); // TODO: check memory leak
-            callback(null, sudoku);
+            modelSudoku.set('historyId', sudokuHistory.getId());
+
+            modelSudoku.save(function (error) {
+                if (error) { return callback(error); }
+
+                callback(null, sudoku);
+            });
         });
     });
 };
 
 Sudoku.load = function (hash, callback) {
     ModelSudoku.findOneByHash(hash, function (error, modelSudoku) {
-        if (error) return callback(error);
-        if (!modelSudoku) return callback(new Error('Wrong hash'));
-        var sudoku = new Sudoku(modelSudoku);
-        callback(null, sudoku);
+        if (error) { return callback(error); }
+        if (!modelSudoku) { return callback(new Error('Wrong hash')); }
+
+        SudokuBoard.load(modelSudoku.boardId, function (error, sudokuBoard) {
+            if (error) { return callback(error); }
+
+            SudokuHistory.load(modelSudoku.historyId, function (error, sudokuHistory) {
+                if (error) { return callback(error); }
+                if (!modelSudoku) { return callback(new Error('Wrong board ID')); }
+
+                callback(null, new Sudoku(modelSudoku, {board: sudokuBoard, history: sudokuHistory}));
+            });
+        });
     });
 };
 

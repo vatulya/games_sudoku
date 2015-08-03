@@ -13,7 +13,7 @@ var CellCoords = require('./cell/coords');
  * @param parameters
  * @constructor
  */
-function Cell (parameters) {
+function Cell(parameters) {
     this.coords = null;
     this.squareNumber = 0;
     this.boardSize = 0;
@@ -26,9 +26,9 @@ function Cell (parameters) {
 
 Cell.prototype.init = function (parameters) {
     this.coords = new CellCoords(parameters.coords || '');
-    this.squareNumber = parseInt(parameters.squareNumber || 0);
-    this.boardSize = parseInt(parameters.boardSize || 0);
-    this.number = parseInt(parameters.number || 0);
+    this.squareNumber = +parameters.squareNumber;
+    this.boardSize = +parameters.boardSize;
+    this.number = +parameters.number;
     this.isOpen = !!(parameters.isOpen || false);
     this.marks = parameters.marks || [];
 
@@ -40,14 +40,15 @@ Cell.prototype.init = function (parameters) {
 /***************** NUMBER ***/
 
 Cell.prototype.setNumber = function (number) {
-    if (!this.checkNumber(number)) throw new Error('Wrong number "' + number + '". Board size: "' + this.boardSize + '".');
-    this.number = parseInt(number);
-    return this;
+    if (this.checkNumber(number)) {
+        this.number = +number;
+        return true;
+    }
+    return false;
 };
 
 Cell.prototype.checkNumber = function (number) {
-    number = parseInt(number);
-    return !!(0 < number && number <= this.boardSize);
+    return !!(0 <= +number && +number <= this.boardSize);
 };
 
 /***************** /NUMBER ***/
@@ -55,58 +56,55 @@ Cell.prototype.checkNumber = function (number) {
 /***************** MARK ***/
 
 Cell.prototype.addMark = function (mark) {
-    if (!this.checkNumber(mark)) throw new Error('Wrong mark "' + mark + '". Board size: "' + this.boardSize + '".');
-    if (mark < 1) {
-        return this;
+    if (+mark && this.checkNumber(mark)) {
+        if (!this.hasMark(mark)) {
+            this.marks.push(+mark);
+        }
+        return true;
     }
-    if (!this.hasMark(mark)) {
-        this.marks.push(parseInt(mark));
-    }
-    return this;
+    return false;
 };
 
 Cell.prototype.addMarks = function (marks) {
-    var self = this;
-    $.each(marks, function (i, mark) {
-        self.addMark(mark);
-    });
+    return marks.every(this.addMark);
 };
 
 Cell.prototype.removeMark = function (mark) {
     if (this.hasMark(mark)) {
-        mark = parseInt(mark);
-        this.marks.slice(this.marks.indexOf(mark), 1);
+        this.marks.slice(this.marks.indexOf(+mark), 1);
+        return true;
     }
+    return false;
 };
 
 Cell.prototype.removeMarks = function (marks) {
-    var self = this;
-    $.each(marks, function (i, mark) {
-        self.removeMark(mark);
-    });
+    return marks.every(this.removeMark);
 };
 
 Cell.prototype.removeAllMarks = function () {
-    for (var number = 1; number <= this.boardSize; number++) {
-        this.removeClass('mark-' + number);
+    var mark;
+    for (mark = 1; mark <= this.boardSize; mark += 1) {
+        if (!this.removeMark(mark)) {
+            return false;
+        }
     }
+    return this;
 };
 
 Cell.prototype.setMarks = function (marks) {
     this.removeAllMarks();
-    this.addMarks(marks);
+    return this.addMarks(marks);
 };
 
 Cell.prototype.toggleMark = function (mark) {
-    mark = parseInt(mark);
-    if (mark > 1) {
-        this.container.hasClass('mark-' + mark) ? this.removeMark(mark) : this.addMark(mark);
+    if (+mark && this.checkNumber(mark)) {
+        return this.hasMark(mark) ? this.removeMark(mark) : this.addMark(mark);
     }
+    return false;
 };
 
 Cell.prototype.hasMark = function (mark) {
-    mark = parseInt(mark);
-    return (this.marks.indexOf(mark) > -1);
+    return (this.marks.indexOf(+mark) > -1);
 };
 
 /***************** /MARK ***/

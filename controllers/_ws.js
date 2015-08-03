@@ -12,13 +12,13 @@ module.exports = function (socket) {
             application: 'sudoku'
         };
         api.get('/sudoku/games/create', params, function (error, data) {
-            if (error) return console.log(error);
+            if (error) { return forceRefresh(socket, error); }
             data = {
                 hash: data.hash,
                 size: 9 // TODO: get this parameter from user side
             };
             Sudoku.create(data.hash, function (error, sudoku) {
-                if (error) throw error;
+                if (error) return forceRefresh(socket, error);
                 var url = '/game/' + sudoku.getHash();
                 socket.emit('game:created', {url: url});
             });
@@ -27,6 +27,7 @@ module.exports = function (socket) {
 
     socket.on('loadBoard', function (data) {
         Sudoku.load(data._game_hash, function (error, sudoku) {
+            if (error) return forceRefresh(socket, error);
             var response = extend(sudoku.board.toHash(), sudoku.getSystemData());
             socket.emit('loadBoard', response);
         });
@@ -34,7 +35,9 @@ module.exports = function (socket) {
 
     socket.on('setCell', function (data) {
         Sudoku.load(data._game_hash, function (error, sudoku) {
+            if (error) return forceRefresh(socket, error);
             sudoku.doUserAction(data, function (error) {
+                if (error) return socket.emit('system:forceRefresh', {message: error.message});
                 var response = extend(sudoku.board.toHash(), sudoku.getSystemData());
                 socket.emit('systemData', response);
             });
@@ -42,3 +45,9 @@ module.exports = function (socket) {
     });
 
 };
+
+function forceRefresh(socket, error) {
+    console.log(error);
+    socket.emit('system:forceRefresh', {message: error.message});
+    return true;
+}

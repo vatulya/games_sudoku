@@ -1,36 +1,28 @@
+var separator = '_';
+
 /**
  * new Coords(1, 5)
  * new Coords("1_5") // check this.separator
  *
- * @param row
- * @param col
+ * If you don't need to create new Object (example: just check valid coords) then you can call Coords.parse(row, col)
+ *
+ * @param {Number|String} row
+ * @param {Number=} col
  * @constructor
  */
 function Coords(row, col) {
-    this.row = null;
-    this.col = null;
+    var coords = Coords.parse(row, col);
 
-    this.separator = '_';
-
-    if (row && col) {
-        this.row = row;
-        this.col = col;
-    } else if (typeof row == 'string') {
-        var coords = row.split(this.separator, 2);
-        this.row = coords[0];
-        this.col = coords[1];
-    }
-
-    this.row = parseInt(this.row);
-    this.col = parseInt(this.col);
-
-    if (!this.row || !this.col) {
+    if (!coords) {
         throw new Error('Can\'t initialize Sudoku Cell Coords. Wrong parameters.');
     }
+
+    this.row = coords[0];
+    this.col = coords[1];
 }
 
 Coords.prototype.toString = function () {
-    return '' + this.row + this.separator + this.col;
+    return '' + this.row + separator + this.col;
 };
 
 Coords.prototype.getRowCssClass = function () {
@@ -47,6 +39,25 @@ Coords.prototype.getRowFromCssClass = function (cssClassesString) {
 
 Coords.prototype.getColFromCssClass = function (cssClassesString) {
     return /col-([0-9]+)/.exec(cssClassesString)[1];
+};
+
+Coords.parse = function (row, col) {
+    var coords = [];
+
+    if (+row > 0 && +col > 0) {
+        coords = [row, col];
+    } else if (typeof row === 'string') {
+        coords = row.split(separator, 2);
+    }
+
+    coords[0] = +coords[0];
+    coords[1] = +coords[1];
+
+    if (coords[0] > 0 && coords[1] > 0) {
+        return coords;
+    }
+
+    return false;
 };
 
 module.exports = Coords;
