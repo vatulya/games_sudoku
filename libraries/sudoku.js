@@ -11,11 +11,11 @@ function Sudoku(modelSudoku, parameters) {
     this.history = null;
 
     if (typeof parameters === 'object') {
-        if (parameters.hasOwnProperty('board') && SudokuBoard.isPrototypeOf(parameters.board)) {
+        if (parameters.hasOwnProperty('board') && parameters.board instanceof SudokuBoard) {
             this.board = parameters.board;
         }
-        if (parameters.hasOwnProperty('history') && SudokuHistory.isPrototypeOf(parameters.history)) {
-            this.board = parameters.history;
+        if (parameters.hasOwnProperty('history') && parameters.history instanceof SudokuHistory) {
+            this.history = parameters.history;
         }
     }
 }
@@ -121,7 +121,7 @@ Sudoku.load = function (hash, callback) {
         if (error) { return callback(error); }
         if (!modelSudoku) { return callback(new Error('Wrong hash')); }
 
-        SudokuBoard.load(modelSudoku.boardId, function (error, sudokuBoard) {
+        SudokuBoard.load(modelSudoku.get('boardId'), function (error, sudokuBoard) {
             if (error) { return callback(error); }
 
             SudokuHistory.load(modelSudoku.historyId, function (error, sudokuHistory) {

@@ -4,11 +4,8 @@ var SudokuHistory = require('./sudoku/history');
 
 var sudokuSchema = mongoose.Schema({
     hash: String,
-    size: Number,
-    openedCells: {},
-    checkedCells: {},
-    markedCells: {},
-    squares: {}
+    boardId: mongoose.Schema.Types.ObjectId,
+    historyId: mongoose.Schema.Types.ObjectId
 });
 
 sudokuSchema.index({
@@ -20,12 +17,12 @@ sudokuSchema.static('findOneByHash', function (hash, callback) {
 });
 
 sudokuSchema.methods.getBoardModel = function (callback) {
-    this.model('sudoku_board').findById(this.boardId, callback);
+    this.model('sudoku_board').findById(this.get('boardId'), callback);
     //SudokuBoard.findById(this.boardId, callback);
 };
 
 sudokuSchema.methods.getHistoryModel = function (callback) {
-    this.model('sudoku_history').findById(this.historyId, callback);
+    this.model('sudoku_history').findById(this.get('historyId'), callback);
     //SudokuHistory.findById(this.historyId, callback);
 };
 

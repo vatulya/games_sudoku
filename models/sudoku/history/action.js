@@ -2,7 +2,7 @@ var mongoose = require('./../../mongoose');
 var History = require('./../history');
 
 var actionSchema = mongoose.Schema({
-    historyId: History.Types.ObjectId,
+    historyId: mongoose.Schema.Types.ObjectId,
     action: {}
 });
 

@@ -64,6 +64,9 @@ Board.prototype.initCells = function () {
         cellsPerRow = [],
         cellsPerCol = [],
         cellsPerSquare = [],
+        openedCells = this.model.get('openedCells') || {},
+        checkedCells = this.model.get('checkedCells') || {},
+        markedCells = this.model.get('markedCells') || {},
         row,
         col,
         coords,
@@ -94,16 +97,16 @@ Board.prototype.initCells = function () {
                 marks: []
             };
 
-            if (this.model.openedCells.hasOwnProperty(key) && +this.model.openedCells[key] && this.checkNumber(this.model.openedCells[key])) {
+            if (openedCells.hasOwnProperty(key) && +openedCells[key] && this.checkNumber(openedCells[key])) {
                 cellParameters.isOpen = true;
-                cellParameters.number = this.model.openedCells[key];
+                cellParameters.number = openedCells[key];
             } else {
                 // Cell can't be open and checked. Cell can't be open and marked
-                if (this.model.checkedCells.hasOwnProperty(key) && +this.model.checkedCells[key] && this.checkNumber(this.model.checkedCells[key])) {
-                    cellParameters.number = this.model.checkedCells[key];
+                if (checkedCells.hasOwnProperty(key) && +checkedCells[key] && this.checkNumber(checkedCells[key])) {
+                    cellParameters.number = checkedCells[key];
                 }
-                if (this.model.markedCells.hasOwnProperty(key)) {
-                    cellParameters.marks = this.model.markedCells[key];
+                if (markedCells.hasOwnProperty(key)) {
+                    cellParameters.marks = markedCells[key];
                 }
             }
 
@@ -162,7 +165,7 @@ Board.prototype.initCells = function () {
 /********************************************** PUBLIC METHODS ***/
 
 Board.prototype.getId = function () {
-    return this.model.id;
+    return this.model.get('id');
 };
 
 /**
