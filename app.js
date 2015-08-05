@@ -35,11 +35,13 @@ app.use(require('less-middleware')('/less', {
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(logger('dev'));
+app.use(require('./middlewares/debug')(app.get('env')));
 
 app.use(require('./controllers/_router'));
 
 var errorController = require('./controllers/error')(app.get('env'));
 app.use(errorController.error404);
 app.use(errorController.error500);
+
 
 module.exports = app;

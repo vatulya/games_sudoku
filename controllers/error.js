@@ -11,6 +11,7 @@ module.exports = function (env) {
                 message: err.message,
                 error: env === 'development' ? err : {}
             });
+            next(err);
         }
     };
 };

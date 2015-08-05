@@ -1,4 +1,5 @@
 var ModelSudokuHistory = require('./../../models/sudoku/history');
+var array = require('./../../helpers/array');
 
 function History(model) {
     this.model = model;
@@ -23,26 +24,55 @@ History.prototype.getId = function () {
 };
 
 History.prototype.getDiff = function (fromCells, toCells) {
-    var diff = {},
+    var diff = {
+            checkedCells: {},
+            markedCells: {}
+        },
         cellKeys = [];
 
-    cellKeys = Object.keys(fromCells);
+    cellKeys = Object.keys(fromCells).concat(Object.keys(toCells));
+    cellKeys = array.unique(cellKeys);
     cellKeys.forEach(function (key) {
-        diff[key] = +fromCells[key];
-    });
-    cellKeys = Object.keys(toCells);
-    cellKeys.forEach(function (key) {
-        diff[key] = +toCells[key];
+        if (fromCells.hasOwnProperty(key) && !toCells.hasOwnProperty(key)) {
+            diff.checkedCells[key] = 0;
+            diff.markedCells[key] = [];
+        } else if (!fromCells.hasOwnProperty(key) && toCells.hasOwnProperty(key)) {
+            if (+toCells[key].number) {
+                diff.checkedCells[key] = +toCells[key].number;
+            }
+            if (toCells[key].marks.length) {
+                diff.markedCells[key] = toCells[key].marks;
+            }
+        } else {
+            if (+fromCells[key].number !== +toCells[key].number) {
+                diff.checkedCells[key] = +toCells[key].number;
+            }
+            if (array.isDifferent(fromCells[key].marks, toCells[key].marks)) {
+                diff.markedCells[key] = toCells[key].marks;
+            }
+        }
     });
     return diff;
 };
 
-History.prototype.addAction = function (actionData) {
+History.prototype.addAction = function (actionData, callback) {
     this.undo = actionData;
     this.redo = {};
+    this._save(callback);
 };
 
 /********************************************** /PUBLIC METHODS ***/
+
+/********************************************** PROTECTED METHODS ***/
+
+History.prototype._save = function (callback) {
+    this.model.save(function (error) {
+        if (error) { return callback(error); }
+        callback(null);
+    });
+};
+
+/********************************************** /PROTECTED METHODS ***/
 
 /********************************************** STATIC METHODS ***/
 

@@ -39,34 +39,31 @@ function Board(model) {
 
     this.size = 0; // 4, 6, 9, ...
 
-    this.openedCells = {};
-    this.checkedCells = {};
-    this.markedCells = {};
-
     this.cells = {};
     this.rows = [];
     this.cols = [];
     this.squares = [];
 
-    this.init();
+    this.init(Board.getParametersFromModel(model));
 }
 
 /********************************************** INIT ***/
 
-Board.prototype.init = function () {
-    this.size = this.model.size;
+Board.prototype.init = function (parameters) {
+    this.size = parameters.size;
 
-    this.initCells();
+    this.initCells(parameters);
 };
 
-Board.prototype.initCells = function () {
+Board.prototype.initCells = function (parameters) {
     var self = this,
         cellsPerRow = [],
         cellsPerCol = [],
         cellsPerSquare = [],
-        openedCells = this.model.get('openedCells') || {},
-        checkedCells = this.model.get('checkedCells') || {},
-        markedCells = this.model.get('markedCells') || {},
+        openedCells = parameters.openedCells || {},
+        checkedCells = parameters.checkedCells || {},
+        markedCells = parameters.markedCells || {},
+        squares = parameters.squares || {},
         row,
         col,
         coords,
@@ -75,8 +72,6 @@ Board.prototype.initCells = function () {
         cell;
 
     this.openedCells = {};
-    this.checkedCells = {};
-    this.markedCells = {};
 
     this.cells = {};
     this.rows = [];
@@ -90,7 +85,7 @@ Board.prototype.initCells = function () {
 
             cellParameters = {
                 coords: coords.toString(),
-                squareNumber: this.model.squares[key],
+                squareNumber: +squares[key] || 1,
                 boardSize: this.size,
                 number: 0,
                 isOpen: false,
@@ -112,18 +107,11 @@ Board.prototype.initCells = function () {
 
             cell = new Cell(cellParameters);
 
+            this.cells[coords] = cell;
+
             if (cell.isOpen) {
                 this.openedCells[coords] = cell;
-            } else {
-                if (cell.number) {
-                    this.checkedCells[coords] = cell;
-                }
-                if (cell.marks.length) {
-                    this.markedCells[coords] = cell;
-                }
             }
-
-            this.cells[coords] = cell;
 
             if (!cellsPerRow[row]) {
                 cellsPerRow[row] = [];
@@ -180,6 +168,8 @@ Board.prototype.getCellByCoords = function (row, col) {
 
 Board.prototype.toHash = function () {
     var self = this,
+        cell,
+        number,
         hash = {
             size: this.size,
             openedCells: {},
@@ -188,14 +178,20 @@ Board.prototype.toHash = function () {
             squares: {}
         };
 
-    Object.keys(this.openedCells).forEach(function (key) {
-        hash.openedCells[key] = self.openedCells[key].number;
-    });
-    Object.keys(this.checkedCells).forEach(function (key) {
-        hash.checkedCells[key] = self.checkedCells[key].number;
-    });
-    Object.keys(this.markedCells).forEach(function (key) {
-        hash.markedCells[key] = self.markedCells[key].marks;
+    Object.keys(this.cells).forEach(function (key) {
+        cell = self.cells[key];
+        number = +cell.number;
+        if (cell.isOpen) {
+            hash.openedCells[key] = number;
+        } else {
+            if (cell.number) {
+                hash.checkedCells[key] = number;
+            }
+            if (cell.marks.length) {
+                hash.markedCells[key] = cell.marks;
+            }
+        }
+        hash.squares[key] = +cell.squareNumber;
     });
 
     return hash;
@@ -217,40 +213,32 @@ Board.prototype.isCorrectParameters = function (parameters) {
     return false;
 };
 
-Board.prototype.applyCheckedAndMarkedCells = function (checkedCells, markedCells) {
-    return this.applyCheckedCells(checkedCells) && this.applyMarkedCells(markedCells);
-};
-
-Board.prototype.applyCheckedCells = function (checkedCells) {
+Board.prototype.applyDiff = function (diff, callback) {
     var self = this,
-        keys = Object.keys(checkedCells),
-        applyCell = function (key) {
-            if (self.cells.hasOwnProperty(key)) {
-                if (self.checkNumber(+checkedCells[key])) {
-                    if (self.cells[key].setNumber(+checkedCells[key])) {
-                        return true;
-                    }
-                }
+        result = true;
+
+    if (diff.hasOwnProperty('checkedCells')) {
+        result = Object.keys(diff.checkedCells).every(function (key) {
+            if (!self.cells.hasOwnProperty(key)) {
+                return false;
             }
-            return false;
-        };
-
-    return keys.every(applyCell);
-};
-
-Board.prototype.applyMarkedCells = function (markedCells) {
-    var self = this,
-        keys = Object.keys(markedCells),
-        applyCell = function (key) {
-            if (self.cells.hasOwnProperty(key)) {
-                if (self.cells[key].setMarks(+markedCells[key])) {
-                    return true;
-                }
+            return self.cells[key].setNumber(diff.checkedCells[key]);
+        });
+    }
+    if (result && diff.hasOwnProperty('markedCells')) {
+        result = Object.keys(diff.markedCells).every(function (key) {
+            if (!self.cells.hasOwnProperty(key)) {
+                return false;
             }
-            return false;
-        };
+            return self.cells[key].setMarks(diff.checkedCells[key]);
+        });
+    }
 
-    return keys.every(applyCell);
+    if (!result) {
+        return callback(new Error('Can\'t apply board diff'));
+    }
+
+    return this._save(callback);
 };
 
 /********************************************** /PUBLIC METHODS ***/
@@ -262,7 +250,7 @@ Board.prototype._isCorrectOpenedCells = function (openedCells) {
         keys = Object.keys(openedCells),
         isCorrect = function (key) {
             if (self.openedCells.hasOwnProperty(key)) { // board has the same opened cell
-                if (+openedCells[key] === +self.openedCells[key]) { // numbers are the same
+                if (+openedCells[key] === +self.openedCells[key].number) { // numbers are the same
                     return true;
                 }
             }
@@ -273,7 +261,7 @@ Board.prototype._isCorrectOpenedCells = function (openedCells) {
         return true; // Allow when empty. We can skip this test because openedCells is static
     }
 
-    if (keys.length !== this.openedCells.length) {
+    if (keys.length !== Object.keys(this.openedCells).length) {
         return false;
     }
 
@@ -316,6 +304,19 @@ Board.prototype._isCorrectMarkedCells = function (markedCells) {
     return keys.every(isCorrect);
 };
 
+Board.prototype._save = function (callback) {
+    var hash = this.toHash();
+    if (!this.isCorrectParameters(hash)) {
+        return callback(new Error('Can\'t save board. Wrong board structure.'));
+    }
+    this.model.set('checkedCells', hash.checkedCells || {});
+    this.model.set('markedCells', hash.markedCells || {});
+    this.model.save(function (error) {
+        if (error) { return callback(error); }
+        callback(null);
+    });
+};
+
 /********************************************** /PROTECTED METHODS ***/
 
 /********************************************** STATIC METHODS ***/
@@ -341,7 +342,7 @@ Board.hideCells = function (boardHash, countCellsToHide) {
     return boardHash;
 };
 
-Board.convertBoardHashToParameters = function (boardHash, squares) {
+Board.convertSimpleBoardHashToParameters = function (boardHash, squares) {
     var openedCells = {},
         allKeys = Object.keys(boardHash);
 
@@ -358,11 +359,28 @@ Board.convertBoardHashToParameters = function (boardHash, squares) {
     };
 };
 
+Board.getParametersFromModel = function (model) {
+    return {
+        size: +model.get('size'),
+        openedCells: model.get('openedCells') || {},
+        checkedCells: model.get('checkedCells') || {},
+        markedCells: model.get('markedCells') || {},
+        squares: model.get('squares') || {}
+    };
+};
+
+Board.createCellsFromBoardHash = function (parameters) {
+    var pseudoBoard = extend({}, Board.prototype);
+    Board.prototype.init.call(pseudoBoard, parameters);
+
+    return pseudoBoard.cells;
+};
+
 Board.create = function (parameters, callback) {
     Board.generate(parameters, function (error, simpleBoardHash, squares) {
         if (error) { return callback(error); }
 
-        parameters = Board.convertBoardHashToParameters(simpleBoardHash, squares);
+        parameters = Board.convertSimpleBoardHashToParameters(simpleBoardHash, squares);
         Board.hideCells(parameters.openedCells, 15);/* parameters.difficulty.getHiddenCellsCount() */
 
         var model = new ModelSudokuBoard();

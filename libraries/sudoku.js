@@ -50,29 +50,29 @@ Sudoku.prototype.getCellByCoords = function (row, col) {
 };
 
 Sudoku.prototype.doUserAction = function (data, callback) {
-    var diffCheckedCells = {},
-        diffMarkedCells = {};
+    var self = this,
+        toCells = {},
+        diff = {};
 
     if (!this.board.isCorrectParameters(data || {})) {
         return callback(new Error('Wrong user action data'));
     }
 
-    diffCheckedCells = this.history.getDiff(this.board.checkedCells, data.checkedCells || {});
-    diffMarkedCells = this.history.getDiff(this.board.markedCells, data.markedCells || {});
+    toCells = SudokuBoard.createCellsFromBoardHash(extend(data, {size: this.board.size}));
 
-    if (Object.keys(diffCheckedCells).length || Object.keys(diffMarkedCells).length) {
-        if (this.board.applyCheckedAndMarkedCells(data.checkedCells, data.markedCells)) {
-            if (this.history.addAction({checkedCells: diffCheckedCells, markedCells: diffMarkedCells})) {
-                this.modelSudoku.setBoard(this.board.toHash());
-                this.modelSudoku.save(function (error) {
-                    if (error) { return callback(error); }
-                    callback(null);
-                });
-            }
-        }
+    diff = this.history.getDiff(this.board.cells, toCells);
+
+    if (!Object.keys(diff.checkedCells).length && !Object.keys(diff.markedCells).length) {
+        callback(new Error('Saving data error'));
     }
 
-    callback(new Error('Saving data error'));
+    this.board.applyDiff(diff, function (error) {
+        if (error) { return callback(error); }
+        self.history.addAction(diff, function (error) {
+            if (error) { return callback(error); }
+            callback(null);
+        });
+    });
 };
 
 /********************************************** PUBLIC METHODS ***/
