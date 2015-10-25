@@ -9,21 +9,6 @@ let ModelSudoku = require('./../models/sudoku'),
 
 let Sudoku = class {
 
-    constructor (modelSudoku, parameters) {
-        this.modelSudoku = modelSudoku;
-        this.board = null;
-        this.history = null;
-
-        if (typeof parameters === 'object') {
-            if (parameters.hasOwnProperty('board') && parameters.board instanceof SudokuBoard) {
-                this.board = parameters.board;
-            }
-            if (parameters.hasOwnProperty('history') && parameters.history instanceof SudokuHistory) {
-                this.history = parameters.history;
-            }
-        }
-    }
-
     /********************************************** STATIC METHODS ***/
 
     static load (hash, callback) {
@@ -82,6 +67,21 @@ let Sudoku = class {
     }
 
     /********************************************** /STATIC METHODS ***/
+
+    constructor (modelSudoku, parameters) {
+        this.modelSudoku = modelSudoku;
+        this.board = null;
+        this.history = null;
+
+        if (typeof parameters === 'object') {
+            if (parameters.hasOwnProperty('board') && parameters.board instanceof SudokuBoard) {
+                this.board = parameters.board;
+            }
+            if (parameters.hasOwnProperty('history') && parameters.history instanceof SudokuHistory) {
+                this.history = parameters.history;
+            }
+        }
+    }
 
     /********************************************** PUBLIC METHODS ***/
 
