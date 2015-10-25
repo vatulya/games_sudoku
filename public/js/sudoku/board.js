@@ -277,7 +277,7 @@ SudokuBoard.prototype.hoverNumber = function (number) {
     this.board.find('.cell.hovered').removeClass('hovered');
     number = parseInt(number);
     if (number > 0) {
-        this.cells.each(function (i, Cell) {
+        $.each(this.cells, function (i, Cell) {
             if (Cell.getNumber() == number) {
                 Cell.container.addClass('hovered');
             }

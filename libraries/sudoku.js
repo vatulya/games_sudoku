@@ -23,13 +23,15 @@ function Sudoku(modelSudoku, parameters) {
 /********************************************** PROTECTED METHODS ***/
 
 Sudoku.prototype.getSystemData = function () {
+
     return {
         _system: {
             gameHash: this.getHash(),
             undoMove: this.history.undo,
             redoMove: this.history.redo,
             duration: 15, // this.duration,
-            microtime: new Date().getTime()
+            microtime: new Date().getTime(),
+            resolved: this.board.isResolved()
         }
     };
 };

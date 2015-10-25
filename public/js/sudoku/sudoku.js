@@ -158,11 +158,17 @@ Sudoku.prototype.systemDataResponse = function (response) {
         if (systemResponse.hasOwnProperty('microtime') && systemResponse['microtime'] > this.lastSystemDataMicrotime) {
             this.lastSystemDataMicrotime = systemResponse['microtime'];
             if (this._checkGameHash(systemResponse['gameHash'] || '')) {
-                this.history.setUndo(systemResponse['undoMove'] || {});
-                this.history.setRedo(systemResponse['redoMove'] || {});
-                this._updateGameServerTime(systemResponse['duration']);
+                if (systemResponse.resolved) {
+                    this._win();
+                } else {
+                    this.history.setUndo(systemResponse['undoMove'] || {});
+                    this.history.setRedo(systemResponse['redoMove'] || {});
+                    this._updateGameServerTime(systemResponse['duration']);
+                }
                 return true;
             }
+            // TODO: add check win-game code
+            // TODO: add server-side check win-game on each doUserAction
         }
     }
     return false;
@@ -216,7 +222,6 @@ Sudoku.prototype._updateGameServerTime = function (time) {
 Sudoku.prototype._win = function () {
     this.board.resolved();
     this._stopDurationTimer();
-    this._stopPing();
 };
 
 Sudoku.prototype._forceRefresh = function (reason) {
@@ -260,7 +265,6 @@ Sudoku.prototype.checkNumber = function (number) {
             this.setCellNumber(Cell, number);
         }
         this.board.hoverNumber(Cell.getNumber());
-        this.checkWinGame();
     }
 };
 
@@ -285,12 +289,6 @@ Sudoku.prototype.checkAllowedNumbers = function () {
     });
 
     this.trigger('allowedNumbersChanged', this.allowedNumbers);
-};
-
-Sudoku.prototype.checkWinGame = function () {
-    if (this.board.isFilled()) {
-        this.checkBoard();
-    }
 };
 
 /********************************************** /PUBLIC METHODS ***/
