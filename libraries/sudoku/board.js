@@ -241,6 +241,10 @@ Board.prototype.applyDiff = function (diff, callback) {
     return this._save(callback);
 };
 
+Board.prototype.isResolved = function () {
+    return false;
+};
+
 /********************************************** /PUBLIC METHODS ***/
 
 /********************************************** PROTECTED METHODS ***/
