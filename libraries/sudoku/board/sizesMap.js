@@ -1,7 +1,7 @@
-var map = {
+let map = {
     "4": {
-        "size": 4,
-        "map": [
+        size: 4,
+        map: [
             [1, 1, 2, 2],
             [1, 1, 2, 2],
             [3, 3, 4, 4],
@@ -9,8 +9,8 @@ var map = {
         ]
     },
     "6": {
-        "size": 6,
-        "map": [
+        size: 6,
+        map: [
             [1, 1, 1, 2, 2, 2],
             [1, 1, 1, 2, 2, 2],
             [3, 3, 3, 4, 4, 4],
@@ -20,8 +20,8 @@ var map = {
         ]
     },
     "9": {
-        "size": 9,
-        "map": [
+        size: 9,
+        map: [
             [1, 1, 1, 2, 2, 2, 3, 3, 3],
             [1, 1, 1, 2, 2, 2, 3, 3, 3],
             [1, 1, 1, 2, 2, 2, 3, 3, 3],
@@ -36,14 +36,14 @@ var map = {
     // TODO: add new maps
 };
 
-var allowedSizes = [];
-for (var code in map) {
+let allowedSizes = [];
+for (let code in map) {
     if (map.hasOwnProperty(code)) {
         allowedSizes.push(map[code].size);
     }
 }
 
-var SizesMap = {
+let SizesMap = {
     map: map,
     allowedSizes: allowedSizes
 };
