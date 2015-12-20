@@ -8,6 +8,8 @@ module.exports = function (socket) {
     var io = socket.server;
 
     socket.on('game:create', function (data) {
+        console.log('WS: call "game:create"');
+
         var params = {
             application: 'sudoku'
         };
@@ -26,6 +28,8 @@ module.exports = function (socket) {
     });
 
     socket.on('loadBoard', function (data) {
+        console.log('WS: call "loadBoard"');
+
         Sudoku.load(data._game_hash, function (error, sudoku) {
             if (error) return forceRefresh(socket, error);
             var response = extend(sudoku.board.toHash(), sudoku.getSystemData());
@@ -34,6 +38,8 @@ module.exports = function (socket) {
     });
 
     socket.on('setCell', function (data) {
+        console.log('WS: call "setCell"');
+
         Sudoku.load(data._game_hash, function (error, sudoku) {
             if (error) return forceRefresh(socket, error);
             sudoku.doUserAction(data, function (error) {
@@ -48,6 +54,7 @@ module.exports = function (socket) {
 
 function forceRefresh(socket, error) {
     console.log(error);
+
     socket.emit('system:forceRefresh', {message: error.message});
     return true;
 }

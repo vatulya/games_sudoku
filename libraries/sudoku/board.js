@@ -1,8 +1,12 @@
+"use strict";
+
 let extend = require('util')._extend,
     math = require('./../../helpers/math');
 
 let ModelSudokuBoard = require('./../../models/sudoku/board'),
-    GeneratorSimple = require('./board/generator/simple'),
+    BoardStorageHash = require('./board/storage/hash'),
+    BoardStorageMongoose = require('./board/storage/mongoose'),
+    BoardGeneratorSimple = require('./board/generator/simple'),
     Cell = require('./cell'),
     CellRow = require('./cell/row'),
     CellCol = require('./cell/col'),
@@ -31,7 +35,7 @@ let ModelSudokuBoard = require('./../../models/sudoku/board'),
  *      }
  * }
  *
- * @param model
+ * @param BoardStorageNull storage
  * @constructor
  */
 let Board = class {
@@ -40,7 +44,7 @@ let Board = class {
 
     static generate (parameters, callback) {
         // Here can be logic to choose generator
-        GeneratorSimple.generate(parameters.size, callback);
+        BoardGeneratorSimple.generate(parameters.size, callback);
     }
 
     static getAllowedSizes () {
@@ -78,21 +82,20 @@ let Board = class {
         };
     }
 
-    static getParametersFromModel (model) {
+    static getParametersFromStorage (storage) {
         return {
-            size: +model.get('size'),
-            openedCells: model.get('openedCells') || {},
-            checkedCells: model.get('checkedCells') || {},
-            markedCells: model.get('markedCells') || {},
-            squares: model.get('squares') || {}
+            size: +storage.getParameter('size'),
+            openedCells: storage.getParameter('openedCells') || {},
+            checkedCells: storage.getParameter('checkedCells') || {},
+            markedCells: storage.getParameter('markedCells') || {},
+            squares: storage.getParameter('squares') || {}
         };
     }
 
     static createCellsFromBoardHash (parameters) {
-        let pseudoBoard = extend({}, Board.prototype);
-        Board.prototype.init.call(pseudoBoard, parameters);
+        let board = new Board(new BoardStorageHash(parameters));
 
-        return pseudoBoard.cells;
+        return board.cells;
     }
 
     static create (parameters, callback) {
@@ -102,16 +105,19 @@ let Board = class {
             parameters = Board.convertSimpleBoardHashToParameters(simpleBoardHash, squares);
             Board.hideCells(parameters.openedCells, 15);/* parameters.difficulty.getHiddenCellsCount() */
 
-            let model = new ModelSudokuBoard();
-            model.set('size', parameters.size);
-            model.set('openedCells', parameters.openedCells);
-            model.set('checkedCells', parameters.checkedCells);
-            model.set('markedCells', parameters.markedCells);
-            model.set('squares', parameters.squares);
-            model.save(function (error) {
+            parameters = { // prepare parameters to save
+                size: parameters.size,
+                openedCells: parameters.openedCells,
+                checkedCells: parameters.checkedCells,
+                markedCells: parameters.markedCells,
+                squares: parameters.squares
+            };
+
+            let storage = new BoardStorageMongoose(new ModelSudokuBoard());
+            storage.save(parameters, function (error) {
                 if (error) { return callback(error); }
 
-                callback(null, new Board(model));
+                callback(null, new Board(storage));
             });
         });
     }
@@ -121,14 +127,15 @@ let Board = class {
             if (error) { return callback(error); }
             if (!model) { return callback(new Error('Wrong board ID')); }
 
-            callback(null, new Board(model));
+            let board = new Board(new BoardStorageMongoose(model));
+            callback(null, board);
         });
     }
 
     /********************************************** /STATIC METHODS ***/
 
-    constructor (model) {
-        this.model = model;
+    constructor (storage) {
+        this.storage = storage;
 
         this.size = 0; // 4, 6, 9, ...
 
@@ -137,7 +144,7 @@ let Board = class {
         this.cols = [];
         this.squares = [];
 
-        this.init(this.getParametersFromModel(model));
+        this.init(Board.getParametersFromStorage(storage));
     }
 
     /********************************************** INIT ***/
@@ -246,7 +253,7 @@ let Board = class {
     /********************************************** PUBLIC METHODS ***/
 
     getId () {
-        return this.model.get('id');
+        return this.storage.getId();
     }
 
     /**
@@ -402,13 +409,16 @@ let Board = class {
     }
 
     _save (callback) {
-        let hash = this.toHash();
+        let hash = this.toHash(),
+            parameters = {};
+
         if (!this.isCorrectParameters(hash)) {
             return callback(new Error('Can\'t save board. Wrong board structure.'));
         }
-        this.model.set('checkedCells', hash.checkedCells || {});
-        this.model.set('markedCells', hash.markedCells || {});
-        this.model.save(function (error) {
+
+        parameters.checkedCells = hash.checkedCells;
+        parameters.markedCells = hash.markedCells;
+        this.storage.save(parameters, function (error) {
             if (error) { return callback(error); }
             callback(null);
         });

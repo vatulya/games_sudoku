@@ -1,3 +1,5 @@
+"use strict";
+
 let CellCoords = require('./cell/coords');
 
 /**
@@ -14,7 +16,7 @@ let CellCoords = require('./cell/coords');
  * @constructor
  */
 let Cell = class {
-    construcor (parameters) {
+    constructor (parameters) {
         this.coords = null;
         this.squareNumber = 0;
         this.boardSize = 0;

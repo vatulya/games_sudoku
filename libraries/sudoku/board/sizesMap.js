@@ -1,3 +1,5 @@
+"use strict";
+
 let map = {
     "4": {
         size: 4,
