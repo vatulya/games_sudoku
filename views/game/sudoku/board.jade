@@ -5,7 +5,7 @@ mixin drawCellContainer(Cell)
         - for (var number = 1; number < gameSudoku.getSize(); number++)
             .mark(class=['mark', 'mark-' + number])
 
-- boardClasses = ['size-medium', 'hide-game']
+- boardClasses = ['size-big', 'hide-game']
 table.sudoku-board(class=boardClasses)
     - for (var row = 1; row <= gameSudoku.getSize(); row++)
         tr

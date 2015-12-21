@@ -1,0 +1,26 @@
+.sudoku-controls
+    .sudoku-controls-row
+        button.mark-mode.btn.btn-info(data-toggle="button", title="Клавиши: ~ OR *")
+            | Режим пометок
+
+    .sudoku-controls-row(title="Клавиши: 1-9 and 0")
+        .sudoku-numpad
+            table
+                - var number = 1
+                - for (var row = 1; row <= 3; row++)
+                    tr
+                        - for (var col = 1; col <= 3; col++)
+                            td.number.enabled(data-number=number)= number++
+                tr
+                    td.number.clear(colspan=3, data-number="", title="очистить поле") &#8212;
+    .sudoku-controls-row.btn-group
+        button.undo-move.btn.disabled(data-moves="", title="отменить ход")
+            i.ficon-reply <
+        button.redo-move.btn.disabled(data-moves="", title="повторить ход")
+            i.ficon-forward >
+    .sudoku-controls-row
+        button.check-field.btn
+            | Проверить поле
+    .sudoku-controls-row
+        button.clear-field.btn.btn-danger
+            | Очистить поле
