@@ -52,7 +52,7 @@ SudokuCell.prototype.removeMarks = function (marks) {
 
 SudokuCell.prototype.removeAllMarks = function () {
     for (var number = 1; number <= this.boardSize; number++) {
-        this.removeClass('mark-' + number);
+        this.container.removeClass('mark-' + number);
     }
 };
 

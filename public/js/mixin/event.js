@@ -2,11 +2,18 @@ MixinEvent = {
 
     listeners: {},
 
+    on: function (eventName, listener) {
+        "use strict";
+
+        return this.addListener(eventName, listener);
+    },
+
     addListener: function (eventName, listener) {
         if (!this.listeners.hasOwnProperty(eventName)) {
             this.listeners[eventName] = [];
         }
         this.listeners[eventName].push(listener);
+        return this;
     },
 
     getListeners: function (eventName) {
@@ -24,8 +31,8 @@ MixinEvent = {
         if (!this.listeners.hasOwnProperty(eventName)) {
             return this.listeners[eventName];
         }
-        this.listeners[eventName].each(function (i, listener) {
-            listener.apply(this, data);
+        $(this.listeners[eventName]).each(function (i, listener) {
+            listener.apply(this, [data]);
         });
     }
 

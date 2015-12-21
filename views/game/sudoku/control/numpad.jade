@@ -1,14 +1,13 @@
-.sudoku-controls-div
+.sudoku-numpad(data-sudoku-hash=gameHash)
     .sudoku-controls-row
         button.mark-mode.btn.btn-info(data-toggle="button", title="Клавиши: ~ OR *")
             | Режим пометок
 
     .sudoku-controls-row(title="Клавиши: 1-9 and 0")
-        .sudoku-numpad
-            .numbers
-                - for (var number = 1; number <= 9; number++)
-                    button.number.enabled(data-number=number)= number
-            button.number.clear(data-number="", title="очистить поле") &#8212;
+        .numbers
+            - for (var number = 1; number <= 9; number++)
+                button.number.enabled(data-number=number)= number
+        button.number.clear(data-number="0", title="очистить поле") &#8212;
     .sudoku-controls-row.btn-group.sudoku-history-buttons
         button.undo-move.btn.disabled(data-moves="", title="отменить ход")
             i.ficon-reply

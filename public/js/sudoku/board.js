@@ -257,7 +257,7 @@ SudokuBoard.prototype.removeColRowMarks = function (cell, mark) {
 
 SudokuBoard.prototype.clearBoard = function () {
     var self = this;
-    this.cells.each(function (i, Cell) {
+    $.each(this.cells, function (i, Cell) {
         if (Cell.isOpen()) {
             self.setCell(Cell, 0, []);
         }

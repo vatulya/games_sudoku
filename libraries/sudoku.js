@@ -5,13 +5,26 @@ let extend = require('util')._extend;
 let ModelSudoku = require('./../models/sudoku'),
     ModelSudokuBoard = require('./../models/sudoku/board'),
     SudokuBoard = require('./sudoku/board'),
-    SudokuHistory = require('./sudoku/history');
+    SudokuHistory = require('./sudoku/history'),
+    SudokuGames = {};
 
 let Sudoku = class {
 
     /********************************************** STATIC METHODS ***/
 
-    static load (hash, callback) {
+    static load (hash, callback, refresh) {
+
+        if (refresh && SudokuGames[hash]) {
+            console.log('Remove game "' + hash + '" from cache. Cache contains "' + Object.keys(SudokuGames).length + '" games');
+            delete SudokuGames[hash];
+        }
+
+        if (SudokuGames[hash]) {
+            console.log('Game loaded from cache. Cache contains "' + Object.keys(SudokuGames).length + '" games');
+            callback(null, SudokuGames[hash]);
+            return;
+        }
+
         ModelSudoku.findOneByHash(hash, function (error, modelSudoku) {
             if (error) { return callback(error); }
             if (!modelSudoku) { return callback(new Error('Wrong hash')); }
@@ -23,7 +36,8 @@ let Sudoku = class {
                     if (error) { return callback(error); }
                     if (!modelSudoku) { return callback(new Error('Wrong board ID')); }
 
-                    callback(null, new Sudoku(modelSudoku, {board: sudokuBoard, history: sudokuHistory}));
+                    SudokuGames[hash] = new Sudoku(modelSudoku, {board: sudokuBoard, history: sudokuHistory});
+                    callback(null, SudokuGames[hash]);
                 });
             });
         });

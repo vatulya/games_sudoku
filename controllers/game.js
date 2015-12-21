@@ -17,7 +17,7 @@ router.get('/:gameHash', function (req, res, next) {
             'title': 'Sudoku',
             'gameSudoku': sudoku
         });
-    });
+    }, true);
 });
 
 module.exports = router;

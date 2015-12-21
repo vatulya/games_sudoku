@@ -1,4 +1,5 @@
-- divId = 'game-sudoku-' + gameSudoku.getHash()
+- gameHash = gameSudoku.getHash()
+- divId = 'game-sudoku-' + gameHash
 
 .sudoku-table(id='#{divId}', data-hash=gameSudoku.getHash(), ondragstart='return false;', ondrop='return false;')
 
