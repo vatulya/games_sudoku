@@ -27,12 +27,17 @@ MixinEvent = {
         }
     },
 
+    /**
+     * @param {string} eventName
+     * @param {array} data
+     * @returns {*}
+     */
     trigger: function (eventName, data) {
         if (!this.listeners.hasOwnProperty(eventName)) {
             return this.listeners[eventName];
         }
         $(this.listeners[eventName]).each(function (i, listener) {
-            listener.apply(this, [data]);
+            listener.apply(this, data);
         });
     }
 

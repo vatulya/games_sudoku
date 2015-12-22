@@ -63,6 +63,19 @@ module.exports = function (socket) {
         });
     });
 
+    socket.on('undoMove', function (data) {
+        console.log('WS: call "undoMove"');
+
+        //Sudoku.load(data._game_hash, function (error, sudoku) {
+        //    if (error) return forceRefresh(socket, error);
+        //    sudoku.doUserAction(data, function (error) {
+        //        if (error) return socket.emit('system:forceRefresh', {message: error.message});
+        //        var response = extend(sudoku.board.toHash(), sudoku.getSystemData());
+        //        socket.emit('systemData', response);
+        //    });
+        //});
+    });
+
 };
 
 function forceRefresh(socket, error) {

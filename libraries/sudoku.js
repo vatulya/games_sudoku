@@ -3,7 +3,6 @@
 let extend = require('util')._extend;
 
 let ModelSudoku = require('./../models/sudoku'),
-    ModelSudokuBoard = require('./../models/sudoku/board'),
     SudokuBoard = require('./sudoku/board'),
     SudokuHistory = require('./sudoku/history'),
     SudokuGames = {};
@@ -114,7 +113,8 @@ let Sudoku = class {
     doUserAction (data, callback) {
         let self = this,
             toCells = {},
-            diff = {};
+            diff = {},
+            undoDiff = {};
 
         if (!this.board.isCorrectParameters(data || {})) {
             return callback(new Error('Wrong user action data'));
@@ -123,6 +123,7 @@ let Sudoku = class {
         toCells = SudokuBoard.createCellsFromBoardHash(extend(data, {size: this.board.size}));
 
         diff = this.history.getDiff(this.board.cells, toCells);
+        undoDiff = this.history.getDiff(toCells, this.board.cells);
 
         if (!Object.keys(diff.checkedCells).length && !Object.keys(diff.markedCells).length) {
             callback(new Error('Saving data error'));
@@ -130,7 +131,7 @@ let Sudoku = class {
 
         this.board.applyDiff(diff, function (error) {
             if (error) { return callback(error); }
-            self.history.addAction(diff, function (error) {
+            self.history.addAction(undoDiff, function (error) {
                 if (error) { return callback(error); }
                 callback(null);
             });
