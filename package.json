@@ -23,10 +23,7 @@
     "serve-favicon": "~2.2.0",
     "should": "~6.0.3",
     "sinon": "~1.15.3",
-    "socket.io": "~1.3.5",
-    "stackjs": "^0.1.0"
+    "socket.io": "~1.3.5"
   },
-  "devDependencies": {
-    "babel-preset-es2015": "^6.3.13"
-  }
+  "devDependencies": {}
 }

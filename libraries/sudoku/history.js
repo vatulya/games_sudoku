@@ -1,7 +1,5 @@
 "use strict";
 
-let Stack = require('stackjs');
-
 let ModelSudokuHistoryAction = require('./../../models/sudoku/history/action'),
     StorageMongoose = require('./history/storage/mongoose'),
     Array = require('./../../helpers/array');
@@ -11,14 +9,13 @@ class History {
     constructor (storage) {
         this.storage = storage;
 
-        this.init(History.getParametersFromStorage(storage));
+        this.init();
     }
 
     /********************************************** INIT ***/
 
-    init (parameters) {
-        this.undo = parameters.undo || new Stack();
-        this.redo = parameters.redo || new Stack();
+    init () {
+        // nothing
     };
 
     /********************************************** /INIT ***/
@@ -62,32 +59,18 @@ class History {
     }
 
     addAction (actionData, callback) {
-        this.undo = actionData;
-        this.redo = {};
-        this._save(callback);
+        // TODO: add logic
     }
 
     getUndo () {
-        return this.storage.getUndo();
+        return this.storage.getActionForUndo().oldParameters || {};
     }
 
     getRedo () {
-        return this.storage.getRedo();
+        return this.storage.getActionForRedo().oldParameters || {};
     }
 
     /********************************************** /PUBLIC METHODS ***/
-
-    /********************************************** PROTECTED METHODS ***/
-
-    _save (callback) {
-        let parameters = {};
-        this.storage.save(parameters, function (error) {
-            if (error) { return callback(error); }
-            callback(null);
-        });
-    }
-
-    /********************************************** /PROTECTED METHODS ***/
 
     /********************************************** STATIC METHODS ***/
 
@@ -109,15 +92,22 @@ class History {
         });
     }
 
-    static getParametersFromStorage (storage) {
-        return {
-            undo: storage.getUndo(),
-            redo: storage.getRedo()
-        };
+    static getAllowedActionTypes () {
+        return [
+            History.ACTION_TYPE_SET_CELLS,
+            History.ACTION_TYPE_CLEAR_BOARD,
+            History.ACTION_TYPE_UNDO,
+            History.ACTION_TYPE_REDO
+        ];
     }
 
     /********************************************** /STATIC METHODS ***/
 
 }
+
+History.ACTION_TYPE_SET_CELLS = 'setCells';
+History.ACTION_TYPE_CLEAR_BOARD = 'clearBoard';
+History.ACTION_TYPE_UNDO = 'undo';
+History.ACTION_TYPE_REDO = 'redo';
 
 module.exports = History;

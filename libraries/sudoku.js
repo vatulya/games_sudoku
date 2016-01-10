@@ -150,8 +150,8 @@ let Sudoku = class {
         return {
             _system: {
                 gameHash: this.getHash(),
-                undoMove: this.history.undo,
-                redoMove: this.history.redo,
+                undoMove: this.history.getUndo(),
+                redoMove: this.history.getRedo(),
                 duration: 15, // this.duration,
                 microtime: new Date().getTime(),
                 resolved: this.board.isResolved()

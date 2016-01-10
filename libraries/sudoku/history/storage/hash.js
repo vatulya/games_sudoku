@@ -1,8 +1,8 @@
 "use strict";
 
-let NullStorage = require('./null');
+let AbstractStorage = require('./abstract');
 
-let hashStorage = class extends NullStorage {
+class HashStorage extends AbstractStorage {
 
     constructor(gameId, model) {
         super(gameId);
@@ -18,6 +18,6 @@ let hashStorage = class extends NullStorage {
         callback(null);
     }
 
-};
+}
 
-module.exports = hashStorage;
+module.exports = HashStorage;

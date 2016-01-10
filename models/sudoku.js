@@ -16,15 +16,4 @@ sudokuSchema.static('findOneByHash', function (hash, callback) {
     return this.findOne({hash: hash}, callback);
 });
 
-sudokuSchema.methods.getBoardModel = function (callback) {
-    this.model('sudoku_board').findById(this.get('boardId'), callback);
-    //SudokuBoard.findById(this.boardId, callback);
-};
-
-sudokuSchema.methods.getHistoryModel = function (callback) {
-    this.model('sudoku_history').findById(this.get('historyId'), callback);
-    //SudokuHistory.findById(this.historyId, callback);
-};
-
-
 module.exports = mongoose.model('sudoku', sudokuSchema);

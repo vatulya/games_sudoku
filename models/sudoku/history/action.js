@@ -1,6 +1,8 @@
-var mongoose = require('./../../mongoose');
+"use strict";
 
-var actionSchema = mongoose.Schema({
+let mongoose = require('./../../mongoose');
+
+let actionSchema = mongoose.Schema({
     gameHash: mongoose.Schema.Types.String,
     created: Number,
     actionType: String,
@@ -12,5 +14,9 @@ actionSchema.index({
     gameHash: 1,
     created: 1
 });
+
+actionSchema.statics.findByGameHash = function (gameId, callback) {
+    this.find({gameHash: gameId}, {sort: 'created'}, callback);
+};
 
 module.exports = mongoose.model('sudoku_history_action', actionSchema);
