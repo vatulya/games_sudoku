@@ -15,8 +15,8 @@ actionSchema.index({
     created: 1
 });
 
-actionSchema.statics.findByGameHash = function (gameId, callback) {
+actionSchema.static('findByGameHash', function (gameId, callback) {
     this.find({gameHash: gameId}, {sort: 'created'}, callback);
-};
+});
 
 module.exports = mongoose.model('sudoku_history_action', actionSchema);
