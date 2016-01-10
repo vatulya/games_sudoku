@@ -1,5 +1,5 @@
 var extend = require('util')._extend;
-var math = require('./../../../../helpers/math');
+var Math = require('./../../../../helpers/math');
 
 var sizeMap = require('./../../board/sizesMap');
 var Coords = require('./../../cell/coords');
@@ -59,7 +59,7 @@ GeneratorSimple.shuffleBoard = function (board, callback) {
     var previousMethod = null;
     for (var i = 0, j = 5; i < iterations; i++, j = 5) {
         do {
-            method = possibleMethods[math.random(1, methodsCount) - 1];
+            method = possibleMethods[Math.random(1, methodsCount) - 1];
         } while (method == previousMethod && j-- > 0);
         board = this['shuffleBoardBy' + method](board);
         previousMethod = method;
@@ -75,9 +75,9 @@ GeneratorSimple.shuffleBoardBySwapRows = function (board) {
     var size = board.length;
     var verticalSquares = countVerticalSquares(size);
     var squareHeight = parseInt(size / verticalSquares);
-    var squareRowNumber = math.random(0, verticalSquares - 1);
-    var rowNumber = math.random(0, squareHeight - 1);
-    var switchRowNumber = parseInt((rowNumber + math.random(1, squareHeight - 1)) % squareHeight);
+    var squareRowNumber = Math.random(0, verticalSquares - 1);
+    var rowNumber = Math.random(0, squareHeight - 1);
+    var switchRowNumber = parseInt((rowNumber + Math.random(1, squareHeight - 1)) % squareHeight);
     var fromRowNumber = parseInt(squareRowNumber * squareHeight + rowNumber);
     var toRowNumber = parseInt(squareRowNumber * squareHeight + switchRowNumber);
 
@@ -99,8 +99,8 @@ GeneratorSimple.shuffleBoardBySwapSquareRows = function (board) {
     var size = board.length;
     var verticalSquares = countVerticalSquares(size);
     var squareHeight = parseInt(size / verticalSquares);
-    var squareNumber = math.random(0, verticalSquares - 1);
-    var switchSquareNumber = parseInt((squareNumber + math.random(1, verticalSquares - 1)) % verticalSquares);
+    var squareNumber = Math.random(0, verticalSquares - 1);
+    var switchSquareNumber = parseInt((squareNumber + Math.random(1, verticalSquares - 1)) % verticalSquares);
     var fromRow = parseInt(squareNumber * squareHeight);
     var toRow = parseInt(switchSquareNumber * squareHeight);
 

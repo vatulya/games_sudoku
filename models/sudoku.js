@@ -1,6 +1,6 @@
 var mongoose = require('./mongoose');
 var SudokuBoard = require('./sudoku/board');
-var SudokuHistory = require('./sudoku/history');
+var SudokuHistory = require('./sudoku/history/action');
 
 var sudokuSchema = mongoose.Schema({
     hash: String,

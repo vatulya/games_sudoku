@@ -16,6 +16,7 @@ let CellCoords = require('./cell/coords');
  * @constructor
  */
 let Cell = class {
+
     constructor (parameters) {
         this.coords = null;
         this.squareNumber = 0;

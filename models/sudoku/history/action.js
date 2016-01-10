@@ -1,13 +1,16 @@
 var mongoose = require('./../../mongoose');
-var History = require('./../history');
 
 var actionSchema = mongoose.Schema({
-    historyId: mongoose.Schema.Types.ObjectId,
-    action: {}
+    gameHash: mongoose.Schema.Types.String,
+    created: Number,
+    actionType: String,
+    oldParameters: {},
+    newParameters: {}
 });
 
 actionSchema.index({
-    historyId: 1
+    gameHash: 1,
+    created: 1
 });
 
 module.exports = mongoose.model('sudoku_history_action', actionSchema);

@@ -43,7 +43,7 @@ module.exports = function (socket) {
         Sudoku.load(data._game_hash, function (error, sudoku) {
             if (error) return forceRefresh(socket, error);
             sudoku.doUserAction(data, function (error) {
-                if (error) return socket.emit('system:forceRefresh', {message: error.message});
+                if (error) return forceRefresh(socket, error);
                 var response = extend(sudoku.board.toHash(), sudoku.getSystemData());
                 socket.emit('systemData', response);
             });
@@ -56,24 +56,24 @@ module.exports = function (socket) {
         Sudoku.load(data._game_hash, function (error, sudoku) {
             if (error) return forceRefresh(socket, error);
             sudoku.doUserAction(data, function (error) {
-                if (error) return socket.emit('system:forceRefresh', {message: error.message});
+                if (error) return forceRefresh(socket, error);
                 var response = extend(sudoku.board.toHash(), sudoku.getSystemData());
                 socket.emit('systemData', response);
             }, true);
         });
     });
 
-    socket.on('undoMove', function (data) {
+    socket.on('useHistory', function (data) {
         console.log('WS: call "undoMove"');
 
-        //Sudoku.load(data._game_hash, function (error, sudoku) {
-        //    if (error) return forceRefresh(socket, error);
-        //    sudoku.doUserAction(data, function (error) {
-        //        if (error) return socket.emit('system:forceRefresh', {message: error.message});
-        //        var response = extend(sudoku.board.toHash(), sudoku.getSystemData());
-        //        socket.emit('systemData', response);
-        //    });
-        //});
+        Sudoku.load(data._game_hash, function (error, sudoku) {
+            if (error) return forceRefresh(socket, error);
+            sudoku.useHistory(data.historyType || '', data, function (error) {
+                if (error) return forceRefresh(socket, error);
+                var response = extend(sudoku.board.toHash(), sudoku.getSystemData());
+                socket.emit('systemData', response);
+            });
+        });
     });
 
 };

@@ -31,7 +31,7 @@ let Sudoku = class {
             SudokuBoard.load(modelSudoku.get('boardId'), function (error, sudokuBoard) {
                 if (error) { return callback(error); }
 
-                SudokuHistory.load(modelSudoku.historyId, function (error, sudokuHistory) {
+                SudokuHistory.load(hash, function (error, sudokuHistory) {
                     if (error) { return callback(error); }
                     if (!modelSudoku) { return callback(new Error('Wrong board ID')); }
 
@@ -65,10 +65,8 @@ let Sudoku = class {
 
             modelSudoku.set('boardId', sudokuBoard.getId());
 
-            SudokuHistory.create(function (error, sudokuHistory) {
+            SudokuHistory.create(hash, function (error, sudokuHistory) {
                 if (error) { return callback(error); }
-
-                modelSudoku.set('historyId', sudokuHistory.getId());
 
                 modelSudoku.save(function (error) {
                     if (error) { return callback(error); }
@@ -136,6 +134,16 @@ let Sudoku = class {
                 callback(null);
             });
         });
+    }
+
+    useHistory (historyType, data, callback) {
+        let cells;
+
+        if (historyType != 'undo' && historyType != 'redo') {
+            return callback(new Error('Wrong history type'));
+        }
+
+        cells = this.history[historyType];
     }
 
     getSystemData () {

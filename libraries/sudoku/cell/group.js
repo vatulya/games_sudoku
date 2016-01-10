@@ -1,17 +1,23 @@
-function Group(cells) {
-    this.cells = cells; // [Cell]
+"use strict";
 
-    if (!this.checkCellsStructure()) {
-        throw new Error('Wrong cells structure. Can\'t initialize cell group');
+class Group {
+
+    constructor (cells) {
+        this.cells = cells; // [Cell]
+
+        if (!this.checkCellsStructure()) {
+            throw new Error('Wrong cells structure. Can\'t initialize cell group');
+        }
     }
+
+    checkCellsStructure () {
+        return true;
+    }
+
+    isCorrect () {
+        return true;
+    }
+
 }
-
-Group.prototype.checkCellsStructure = function () {
-    return true;
-};
-
-Group.prototype.isCorrect = function () {
-    return true;
-};
 
 module.exports = Group;

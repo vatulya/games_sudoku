@@ -1,7 +1,6 @@
 "use strict";
 
-let extend = require('util')._extend,
-    math = require('./../../helpers/math');
+let math = require('./../../helpers/math');
 
 let ModelSudokuBoard = require('./../../models/sudoku/board'),
     BoardStorageHash = require('./board/storage/hash'),

@@ -1,13 +1,14 @@
-var util = require('util');
+"use strict";
 
-var Group = require('./group');
+let Group = require('./group');
 
-function Col() {}
-util.inherits(Col, Group);
+let Col = class extends Group {
 
-Col.prototype.checkCellsStructure = function () {
-    // TODO: check cells
-    return true;
+    checkCellsStructure () {
+        // TODO: check cells
+        return true;
+    }
+
 };
 
 module.exports = Col;

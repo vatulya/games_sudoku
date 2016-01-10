@@ -1,22 +1,24 @@
 "use strict";
 
-let ModelSudokuHistory = require('./../../models/sudoku/history'),
-    array = require('./../../helpers/array');
+let Stack = require('stackjs');
+
+let ModelSudokuHistoryAction = require('./../../models/sudoku/history/action'),
+    StorageMongoose = require('./history/storage/mongoose'),
+    Array = require('./../../helpers/array');
 
 class History {
 
-    constructor (model) {
-        this.model = model;
-        this.undo = {};
-        this.redo = {};
+    constructor (storage) {
+        this.storage = storage;
 
-        this.init();
+        this.init(History.getParametersFromStorage(storage));
     }
 
     /********************************************** INIT ***/
 
-    init () {
-        // TODO: load data from mongo and set undo/redo
+    init (parameters) {
+        this.undo = parameters.undo || new Stack();
+        this.redo = parameters.redo || new Stack();
     };
 
     /********************************************** /INIT ***/
@@ -24,7 +26,7 @@ class History {
     /********************************************** PUBLIC METHODS ***/
 
     getId () {
-        return this.model.id;
+        return this.storage.getId();
     }
 
     getDiff (fromCells, toCells) {
@@ -35,7 +37,7 @@ class History {
             cellKeys = [];
 
         cellKeys = Object.keys(fromCells).concat(Object.keys(toCells));
-        cellKeys = array.unique(cellKeys);
+        cellKeys = Array.unique(cellKeys);
         cellKeys.forEach(function (key) {
             if (fromCells.hasOwnProperty(key) && !toCells.hasOwnProperty(key)) {
                 diff.checkedCells[key] = 0;
@@ -51,7 +53,7 @@ class History {
                 if (+fromCells[key].number !== +toCells[key].number) {
                     diff.checkedCells[key] = +toCells[key].number;
                 }
-                if (array.isDifferent(fromCells[key].marks, toCells[key].marks)) {
+                if (Array.isDifferent(fromCells[key].marks, toCells[key].marks)) {
                     diff.markedCells[key] = toCells[key].marks;
                 }
             }
@@ -65,12 +67,21 @@ class History {
         this._save(callback);
     }
 
+    getUndo () {
+        return this.storage.getUndo();
+    }
+
+    getRedo () {
+        return this.storage.getRedo();
+    }
+
     /********************************************** /PUBLIC METHODS ***/
 
     /********************************************** PROTECTED METHODS ***/
 
     _save (callback) {
-        this.model.save(function (error) {
+        let parameters = {};
+        this.storage.save(parameters, function (error) {
             if (error) { return callback(error); }
             callback(null);
         });
@@ -80,22 +91,29 @@ class History {
 
     /********************************************** STATIC METHODS ***/
 
-    static create (callback) {
-        var model = new ModelSudokuHistory();
-        model.save(function (error) {
-            if (error) { return callback(error); }
+    static create (gameHash, callback) {
+        let storage = new StorageMongoose(gameHash, ModelSudokuHistoryAction);
 
-            callback(null, new History(model));
+        storage.init(function (error) {
+            if (error) return callback(error);
+            callback(null, new History(storage));
         });
     }
 
-    static load (id, callback) {
-        ModelSudokuHistory.findById(id, function (error, model) {
-            if (error) { return callback(error); }
-            if (!model) { return callback(new Error('Wrong history ID')); }
+    static load (gameHash, callback) {
+        let storage = new StorageMongoose(gameHash, ModelSudokuHistoryAction);
 
-            callback(null, new History(model));
+        storage.init(function (error) {
+            if (error) return callback(error);
+            callback(null, new History(storage));
         });
+    }
+
+    static getParametersFromStorage (storage) {
+        return {
+            undo: storage.getUndo(),
+            redo: storage.getRedo()
+        };
     }
 
     /********************************************** /STATIC METHODS ***/
