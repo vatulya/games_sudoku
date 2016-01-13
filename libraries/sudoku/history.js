@@ -1,8 +1,12 @@
 "use strict";
 
+let Module = require('./../../helpers/module').dir(__dirname);
+
+let HistoryStorageMemory = Module('./history/storage/memory');
+
 let ModelSudokuHistoryAction = require('./../../models/sudoku/history/action'),
     HistoryStorageMongoose = require('./history/storage/mongoose'),
-    HistoryStorageMemory = require('./history/storage/memory'),
+    //HistoryStorageMemory = require('./history/storage/memory'),
     HistoryAction = require('./history/action'),
     Array = require('./../../helpers/array');
 
@@ -105,7 +109,7 @@ class History {
 
     static create (gameHash, callback) {
         //let storage = new HistoryStorageMongoose(gameHash, ModelSudokuHistoryAction);
-        let storage = new HistoryStorageMemory(gameHash);
+        let storage = new (HistoryStorageMemory())(gameHash);
 
         storage.init(function (error) {
             if (error) return callback(error);
@@ -115,7 +119,7 @@ class History {
 
     static load (gameHash, callback) {
         //let storage = new HistoryStorageMongoose(gameHash, ModelSudokuHistoryAction);
-        let storage = new HistoryStorageMemory(gameHash);
+        let storage = new (HistoryStorageMemory())(gameHash);
 
         storage.init(function (error) {
             if (error) return callback(error);
@@ -141,4 +145,4 @@ History.ACTION_TYPE_CLEAR_BOARD = 'clearBoard';
 History.ACTION_TYPE_UNDO = 'undo';
 History.ACTION_TYPE_REDO = 'redo';
 
-module.exports = exports = History;
+module.exports = History;

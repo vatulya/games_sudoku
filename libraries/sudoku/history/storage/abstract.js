@@ -68,7 +68,7 @@ class HistoryAbstractStorage {
 
     _calcRedoUndo (callback) {
         // overwrite this method
-        // here you can implement logic to calculate undo-redo moved and fill this.undo/this.redo
+        // here you can implement logic to calculate undo-redo moved and fill this.undo
         callback(new Error('AbstractStorage method error'));
     }
 

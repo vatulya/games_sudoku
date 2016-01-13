@@ -1,8 +1,11 @@
 "use strict";
 
+let Module = require('./../../../../helpers/module').dir(__dirname);
+
 let HistoryAbstractStorage = require('./abstract'),
     HistoryAction = require('./../action'),
-    History = require('./../../history');
+    //History = require('./../../history');
+    History = Module('./../../history');
 
 class HistoryMemoryStorage extends HistoryAbstractStorage {
 
@@ -37,38 +40,38 @@ class HistoryMemoryStorage extends HistoryAbstractStorage {
             let continueLoop = true; // you can change this var if you need break the loop. Example: Reach history limit.
 
             switch (action.type) {
-                case History.ACTION_TYPE_SET_CELLS:
-                case History.ACTION_TYPE_CLEAR_BOARD:
-                    if (self.undo) {
+                case (History()).ACTION_TYPE_SET_CELLS:
+                case (History()).ACTION_TYPE_CLEAR_BOARD:
+                    if (Object.keys(self.undo).length) {
                         continueLoop = false;
                     } else {
                         if (undoCount > 0) {
                             undoCount--;
                         } else {
-                            if (!self.undo) {
+                            if (!Object.keys(self.undo).length) {
                                 self.undo = action;
                             }
                         }
                     }
                     break;
 
-                case History.ACTION_TYPE_UNDO:
+                case (History()).ACTION_TYPE_UNDO:
                     undoCount++;
                     if (redoCount > 0) {
                         redoCount--;
                     } else {
-                        if (!self.redo) {
+                        if (!Object.keys(self.redo).length) {
                             self.redo = action;
                         }
                     }
                     break;
 
-                case History.ACTION_TYPE_REDO:
+                case (History()).ACTION_TYPE_REDO:
                     redoCount++;
                     if (undoCount > 0) {
                         undoCount--;
                     } else {
-                        if (!self.undo) {
+                        if (!Object.keys(self.undo).length) {
                             self.undo = action;
                         }
                     }
@@ -80,7 +83,7 @@ class HistoryMemoryStorage extends HistoryAbstractStorage {
                     break;
             }
 
-            if (self.undo && self.redo) {
+            if (Object.keys(self.undo).length && Object.keys(self.redo).length) {
                 continueLoop = false;
             }
 
