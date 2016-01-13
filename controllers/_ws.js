@@ -68,7 +68,7 @@ module.exports = function (socket) {
 
         Sudoku.load(data._game_hash, function (error, sudoku) {
             if (error) return forceRefresh(socket, error);
-            sudoku.useHistory(data.historyType || '', data, function (error) {
+            sudoku.useHistory(data.historyType || '', function (error) {
                 if (error) return forceRefresh(socket, error);
                 var response = extend(sudoku.board.toHash(), sudoku.getSystemData());
                 socket.emit('systemData', response);

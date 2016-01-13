@@ -129,21 +129,38 @@ let Sudoku = class {
 
         this.board.applyDiff(diff, function (error) {
             if (error) { return callback(error); }
-            self.history.addAction(undoDiff, function (error) {
+            self.history.actionSetCells(undoDiff, diff, function (error) {
                 if (error) { return callback(error); }
                 callback(null);
             });
         });
     }
 
-    useHistory (historyType, data, callback) {
-        let cells;
+    useHistory (historyType, callback) {
+        let parameters = {},
+            actionType = '';
 
-        if (historyType != 'undo' && historyType != 'redo') {
-            return callback(new Error('Wrong history type'));
+        switch (historyType) {
+
+            case 'undo':
+                actionType = SudokuHistory.ACTION_TYPE_UNDO;
+                parameters = this.history.getUndo();
+                break;
+
+            case 'redo':
+                actionType = SudokuHistory.ACTION_TYPE_REDO;
+                parameters = this.history.getRedo();
+                break;
+
+            default:
+                return callback(new Error('Wrong history type'));
+                break;
         }
 
-        cells = this.history[historyType];
+        this.history.addAction(actionType, parameters, function (error) {
+            if (error) return callback(error);
+            callback(null);
+        });
     }
 
     getSystemData () {

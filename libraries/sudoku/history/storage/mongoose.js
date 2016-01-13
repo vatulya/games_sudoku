@@ -1,32 +1,34 @@
 "use strict";
 
-let AbstractStorage = require('./abstract'),
+let HistoryMemoryStorage = require('./memory'),
     HistoryAction = require('./../action');
 
-class MongooseStorage extends AbstractStorage {
+class HistoryMongooseStorage extends HistoryMemoryStorage {
 
     constructor (gameId, model) {
         super(gameId);
         this.model = model;
     }
 
-    loadActions (callback) {
+    _init (callback) {
+        let self = this;
+
+        self.actions = [];
+
         this.model.findByGameHash(this.gameHash, function (error, actionsRows) {
             if (error) return callback(error);
 
-            let actions = [];
             actionsRows.forEach(function (row) {
-                actions.push(new HistoryAction({
-                    type: row.actionType,
+                self.actions.push(new HistoryAction(row.actionType, {
                     oldParameters: row.oldParameters,
                     newParameters: row.newParameters
                 }));
             });
 
-            callback(null, actions);
+            callback(null);
         });
     }
 
 }
 
-module.exports = MongooseStorage;
+module.exports = HistoryMongooseStorage;

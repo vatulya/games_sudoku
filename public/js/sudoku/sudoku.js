@@ -275,7 +275,7 @@ class Sudoku {
         var move = historyType == 'undo' ? this.history.getUndo() : this.history.getRedo();
         this.history.clear();
         this.board.applyBoardState(move);
-        this.sendUserAction('useHistory', {historyType: historyType} + this.board.getBoardState());
+        this.sendUserAction('useHistory', $.extend({historyType: historyType}, this.board.getBoardState()));
         this.checkAllowedNumbers();
     }
 

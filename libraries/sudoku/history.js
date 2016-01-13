@@ -1,7 +1,9 @@
 "use strict";
 
 let ModelSudokuHistoryAction = require('./../../models/sudoku/history/action'),
-    StorageMongoose = require('./history/storage/mongoose'),
+    HistoryStorageMongoose = require('./history/storage/mongoose'),
+    HistoryStorageMemory = require('./history/storage/memory'),
+    HistoryAction = require('./history/action'),
     Array = require('./../../helpers/array');
 
 class History {
@@ -58,16 +60,43 @@ class History {
         return diff;
     }
 
-    addAction (actionData, callback) {
-        // TODO: add logic
+    actionSetCells (oldParameters, newParameters, callback) {
+        let action = new HistoryAction(History.ACTION_TYPE_SET_CELLS, {
+            oldParameters: oldParameters,
+            newParameters: newParameters
+        });
+        this.storage.saveAction(action, callback);
+    }
+
+    actionClearBoard (oldParameters, newParameters, callback) {
+
+    }
+
+    actionDoUndo (oldParameters, callback) {
+
+    }
+
+    actionDoRedo (oldParameters, callback) {
+
+    }
+
+    /**
+     * @deprecated
+     *
+     * @param actionType
+     * @param actionData
+     * @param callback
+     */
+    addAction (actionType, actionData, callback) {
+        this.storage.saveAction(actionType, actionData, callback);
     }
 
     getUndo () {
-        return this.storage.getActionForUndo().oldParameters || {};
+        return this.storage.getUndoAction().oldParameters || {};
     }
 
     getRedo () {
-        return this.storage.getActionForRedo().oldParameters || {};
+        return this.storage.getRedoAction().oldParameters || {};
     }
 
     /********************************************** /PUBLIC METHODS ***/
@@ -75,7 +104,8 @@ class History {
     /********************************************** STATIC METHODS ***/
 
     static create (gameHash, callback) {
-        let storage = new StorageMongoose(gameHash, ModelSudokuHistoryAction);
+        //let storage = new HistoryStorageMongoose(gameHash, ModelSudokuHistoryAction);
+        let storage = new HistoryStorageMemory(gameHash);
 
         storage.init(function (error) {
             if (error) return callback(error);
@@ -84,7 +114,8 @@ class History {
     }
 
     static load (gameHash, callback) {
-        let storage = new StorageMongoose(gameHash, ModelSudokuHistoryAction);
+        //let storage = new HistoryStorageMongoose(gameHash, ModelSudokuHistoryAction);
+        let storage = new HistoryStorageMemory(gameHash);
 
         storage.init(function (error) {
             if (error) return callback(error);
@@ -110,4 +141,4 @@ History.ACTION_TYPE_CLEAR_BOARD = 'clearBoard';
 History.ACTION_TYPE_UNDO = 'undo';
 History.ACTION_TYPE_REDO = 'redo';
 
-module.exports = History;
+module.exports = exports = History;

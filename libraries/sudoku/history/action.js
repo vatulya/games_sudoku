@@ -1,24 +1,32 @@
 "use strict";
 
-let History = require('./../history');
+let getAllowedActionTypes = function () {
+    let SudokuHistory = require('./../history'),
+        types = SudokuHistory.getAllowedActionTypes();
+
+    getAllowedActionTypes = function () {
+        return types;
+    };
+
+    return types;
+};
 
 class Action {
 
-    constructor (parameters) {
-        let allowedTypes = History.getAllowedActionTypes();
+    constructor (type, parameters) {
+        let allowedTypes = getAllowedActionTypes();
 
-        this.type = parameters.type || null;
-        this.newParameters = parameters.newParameters || {};
-        this.oldParameters = parameters.oldParameters || {};
+        this.type = type || null;
+        this.parameters = parameters || {};
 
         if (allowedTypes.indexOf(this.type) == -1) {
             throw new Error('History action error. Wrong type');
         }
-        if (!Object.keys(this.newParameters) && !Object.keys(this.oldParameters)) {
-            throw new Error('History action error. Empty action');
+        if (!Object.keys(this.parameters)) {
+            throw new Error('History action error. Empty parameters');
         }
     }
 
 }
 
-module.exports = Action;
+module.exports = exports = Action;

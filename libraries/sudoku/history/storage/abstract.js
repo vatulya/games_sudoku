@@ -1,40 +1,35 @@
 "use strict";
 
-let HistoryAction = require('./../action'),
-    History = require('./../../history');
+let HistoryAction = require('./../action');
 
 /**
- * This class is not finished and contains only main logic
- * You must extend this class - this is why name is "abstract"
+ * This is not finished class. You must extend it and overwrite some methods.
  */
-class AbstractStorage {
+class HistoryAbstractStorage {
 
     constructor (gameHash) {
         this.gameHash = gameHash;
-        this.initialized = false;
-        this.undo = [];
-        this.redo = [];
+        this.undo = {};
+        this.redo = {};
     }
 
     init (callback, force) {
         let self = this;
 
         if (!this.initialized || force) {
-            console.log('History NullStorage: init start (gameHash: "' + this.getGameHash() + '")' + (force ? ' FORCE' : ''));
+            console.log('History storage: init start (gameHash: "' + this.getGameHash() + '")' + (force ? ' FORCE' : ''));
 
-            this.undo = [];
-            this.redo = [];
+            self.undo = {};
+            self.redo = {};
 
-            this.loadActions(function (error, actions) {
+            this._init(function (error) {
                 if (error) return callback (error);
 
-                self.parseActions(actions, function (error, undo, redo) {
+                self._calcRedoUndo(function (error) {
                     if (error) return callback (error);
 
-                    self.undo = undo;
-                    self.redo = redo;
-
                     self.initialized = true;
+
                     callback(null);
                 });
             });
@@ -43,78 +38,54 @@ class AbstractStorage {
         }
     }
 
-    loadActions (callback) {
+    _init (callback) {
         // overwrite this method
-        callback(null, []);
+        // here you can load history for long term storage
+        callback(new Error('AbstractStorage method error'));
     }
 
-    parseActions (actions, callback) {
-        let undo = [],
-            redo = [],
-            historyMovesCount = 0, // -1 when undo and +1 when redo
-            noRedoMore = false;
+    saveAction (action, callback) {
+        let self = this;
 
-        if (!actions.every(function (action) { return action instanceof HistoryAction; })) {
-            return callback(new Error('History action error. Wrong action.'));
-        }
+        if (!action instanceof HistoryAction) return callback(new Error('Save history action error. Wrong Action object'));
 
-        actions.every(function (action) {
-            let continueLoop = true; // you can change this var if you need break the loop. Example: Reach history limit.
+        this._save(action, function (error) {
+            if (error) return callback(error);
 
-            switch (action.type) {
-                case History.ACTION_TYPE_SET_CELLS:
-                case History.ACTION_TYPE_CLEAR_BOARD:
-                    if (historyMovesCount == 0) {
-                        undo.push(action);
-                    } else {
-                        historyMovesCount++;
-                    }
-                    break;
+            self._calcRedoUndo(function (error) {
+                if (error) return callback (error);
 
-                case History.ACTION_TYPE_UNDO:
-                    historyMovesCount--;
-                    if (!noRedoMore) {
-                        redo.push(action);
-                    }
-                    break;
-
-                case History.ACTION_TYPE_REDO:
-                    historyMovesCount++;
-                    break;
-
-                default:
-                    // Unknown type. Ignore.
-                    console.log('Unknown history action type: "' + action.type + '"');
-                    break;
-            }
-
-            if (historyMovesCount >= 0) {
-                noRedoMore = true;
-            }
-
-            return continueLoop;
+                callback(null);
+            });
         });
+    }
 
-        undo.reverse();
-        redo.reverse();
+    _save (action, callback) {
+        // overwrite this method
+        // here you can save action into long term storage
+        callback(new Error('AbstractStorage method error'));
+    }
 
-        callback(null, undo, redo);
+    _calcRedoUndo (callback) {
+        // overwrite this method
+        // here you can implement logic to calculate undo-redo moved and fill this.undo/this.redo
+        callback(new Error('AbstractStorage method error'));
     }
 
     getGameHash () {
         return this.gameHash;
     }
 
-    getActionForUndo () {
+    getUndoAction () {
         if (!this.initialized) throw new Error('History initialization error');
-        return this.undo[this.undo.length - 1] || {};
+        return this.undo || {};
     }
 
-    getActionForRedo () {
+    getRedoAction () {
         if (!this.initialized) throw new Error('History initialization error');
-        return this.redo[this.redo.length - 1] || {};
+        return this.redo || {};
     }
 
 }
 
-module.exports = AbstractStorage;
+module.exports = HistoryAbstractStorage;
