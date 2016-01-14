@@ -1,16 +1,13 @@
 "use strict";
 
-let Module = require('./../../../../helpers/module').dir(__dirname);
-
-let HistoryAbstractStorage = require('./abstract'),
+let HistoryStorageAbstract = require('./abstract'),
     HistoryAction = require('./../action'),
-    //History = require('./../../history');
-    History = Module('./../../history');
+    History = require('./../../history');
 
-class HistoryMemoryStorage extends HistoryAbstractStorage {
+class HistoryStorageMemory extends HistoryStorageAbstract {
 
-    constructor (gameHash) {
-        super(gameHash);
+    constructor(gameHash, parameters) {
+        super(gameHash, parameters);
         this.actions = [];
     }
 
@@ -26,22 +23,23 @@ class HistoryMemoryStorage extends HistoryAbstractStorage {
 
     _calcRedoUndo (callback) {
         let self = this,
+            revertedActions = self.actions.slice().reverse(), // copy array and reverse
             undoCount = 0,
             redoCount = 0;
 
         self.undo = {};
         self.redo = {};
 
-        if (!self.actions.every(function (action) { return action instanceof HistoryAction; })) {
+        if (!revertedActions.every(function (action) { return action instanceof HistoryAction; })) {
             return callback(new Error('History action error. Wrong action type.'));
         }
 
-        self.actions.every(function (action) {
+        revertedActions.every(function (action) {
             let continueLoop = true; // you can change this var if you need break the loop. Example: Reach history limit.
 
             switch (action.type) {
-                case (History()).ACTION_TYPE_SET_CELLS:
-                case (History()).ACTION_TYPE_CLEAR_BOARD:
+                case History.ACTION_TYPE_SET_CELLS:
+                case History.ACTION_TYPE_CLEAR_BOARD:
                     if (Object.keys(self.undo).length) {
                         continueLoop = false;
                     } else {
@@ -55,7 +53,7 @@ class HistoryMemoryStorage extends HistoryAbstractStorage {
                     }
                     break;
 
-                case (History()).ACTION_TYPE_UNDO:
+                case History.ACTION_TYPE_UNDO:
                     undoCount++;
                     if (redoCount > 0) {
                         redoCount--;
@@ -66,7 +64,7 @@ class HistoryMemoryStorage extends HistoryAbstractStorage {
                     }
                     break;
 
-                case (History()).ACTION_TYPE_REDO:
+                case History.ACTION_TYPE_REDO:
                     redoCount++;
                     if (undoCount > 0) {
                         undoCount--;
@@ -95,4 +93,4 @@ class HistoryMemoryStorage extends HistoryAbstractStorage {
 
 }
 
-module.exports = HistoryMemoryStorage;
+module.exports = HistoryStorageMemory;

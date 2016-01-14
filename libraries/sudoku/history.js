@@ -1,12 +1,7 @@
 "use strict";
 
-let Module = require('./../../helpers/module').dir(__dirname);
-
-let HistoryStorageMemory = Module('./history/storage/memory');
-
 let ModelSudokuHistoryAction = require('./../../models/sudoku/history/action'),
-    HistoryStorageMongoose = require('./history/storage/mongoose'),
-    //HistoryStorageMemory = require('./history/storage/memory'),
+    HistoryStorage = require('./history/storage'),
     HistoryAction = require('./history/action'),
     Array = require('./../../helpers/array');
 
@@ -96,11 +91,13 @@ class History {
     }
 
     getUndo () {
-        return this.storage.getUndoAction().oldParameters || {};
+        let action = this.storage.getUndoAction();
+        return action instanceof HistoryAction ? action.parameters.oldParameters : {};
     }
 
     getRedo () {
-        return this.storage.getRedoAction().oldParameters || {};
+        let action = this.storage.getRedoAction();
+        return action instanceof HistoryAction ? action.parameters.oldParameters : {};
     }
 
     /********************************************** /PUBLIC METHODS ***/
@@ -108,8 +105,7 @@ class History {
     /********************************************** STATIC METHODS ***/
 
     static create (gameHash, callback) {
-        //let storage = new HistoryStorageMongoose(gameHash, ModelSudokuHistoryAction);
-        let storage = new (HistoryStorageMemory())(gameHash);
+        let storage = new (HistoryStorage('memory'))(gameHash, {model: ModelSudokuHistoryAction});
 
         storage.init(function (error) {
             if (error) return callback(error);
@@ -118,8 +114,7 @@ class History {
     }
 
     static load (gameHash, callback) {
-        //let storage = new HistoryStorageMongoose(gameHash, ModelSudokuHistoryAction);
-        let storage = new (HistoryStorageMemory())(gameHash);
+        let storage = new (HistoryStorage('memory'))(gameHash, {model: ModelSudokuHistoryAction});
 
         storage.init(function (error) {
             if (error) return callback(error);

@@ -1,13 +1,18 @@
 "use strict";
 
-let HistoryMemoryStorage = require('./memory'),
+let Mongoose = require('mongoose'),
+    HistoryStorageMemory = require('./memory'),
     HistoryAction = require('./../action');
 
-class HistoryMongooseStorage extends HistoryMemoryStorage {
+class HistoryStorageMongoose extends HistoryStorageMemory {
 
-    constructor (gameId, model) {
-        super(gameId);
-        this.model = model;
+    _setParameters (parameters = {}) {
+        this.model = parameters.model;
+        if (!this.model.base instanceof Mongoose) {
+            throw new Error('History storage Mongoose error. Wrong parameter.model type');
+        }
+
+        return super._setParameters(parameters);
     }
 
     _init (callback) {
@@ -31,4 +36,4 @@ class HistoryMongooseStorage extends HistoryMemoryStorage {
 
 }
 
-module.exports = HistoryMongooseStorage;
+module.exports = HistoryStorageMongoose;

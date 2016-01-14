@@ -5,12 +5,19 @@ let HistoryAction = require('./../action');
 /**
  * This is not finished class. You must extend it and overwrite some methods.
  */
-class HistoryAbstractStorage {
+class HistoryStorageAbstract {
 
-    constructor (gameHash) {
+    constructor (gameHash, parameters) {
         this.gameHash = gameHash;
         this.undo = {};
         this.redo = {};
+
+        this._setParameters(parameters || {});
+    }
+
+    _setParameters (parameters) {
+        // overwrite this method
+        // here you can set some additional parameters
     }
 
     init (callback, force) {
@@ -88,4 +95,4 @@ class HistoryAbstractStorage {
 
 }
 
-module.exports = HistoryAbstractStorage;
+module.exports = HistoryStorageAbstract;
