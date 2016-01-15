@@ -137,27 +137,9 @@ let Sudoku = class {
     }
 
     useHistory (historyType, callback) {
-        let parameters = {},
-            actionType = '';
+        let method = historyType === 'redo' ? 'actionDoRedo' : 'actionDoUndo';
 
-        switch (historyType) {
-
-            case 'undo':
-                actionType = SudokuHistory.ACTION_TYPE_UNDO;
-                parameters = this.history.getUndo();
-                break;
-
-            case 'redo':
-                actionType = SudokuHistory.ACTION_TYPE_REDO;
-                parameters = this.history.getRedo();
-                break;
-
-            default:
-                return callback(new Error('Wrong history type'));
-                break;
-        }
-
-        this.history.addAction(actionType, parameters, function (error) {
+        this.history[method](function (error) {
             if (error) return callback(error);
             callback(null);
         });

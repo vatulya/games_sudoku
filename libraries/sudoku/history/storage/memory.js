@@ -38,8 +38,8 @@ class HistoryStorageMemory extends HistoryStorageAbstract {
             let continueLoop = true; // you can change this var if you need break the loop. Example: Reach history limit.
 
             switch (action.type) {
-                case History.ACTION_TYPE_SET_CELLS:
-                case History.ACTION_TYPE_CLEAR_BOARD:
+                case HistoryAction.ACTION_TYPE_SET_CELLS:
+                case HistoryAction.ACTION_TYPE_CLEAR_BOARD:
                     if (Object.keys(self.undo).length) {
                         continueLoop = false;
                     } else {
@@ -53,7 +53,7 @@ class HistoryStorageMemory extends HistoryStorageAbstract {
                     }
                     break;
 
-                case History.ACTION_TYPE_UNDO:
+                case HistoryAction.ACTION_TYPE_UNDO:
                     undoCount++;
                     if (redoCount > 0) {
                         redoCount--;
@@ -64,7 +64,7 @@ class HistoryStorageMemory extends HistoryStorageAbstract {
                     }
                     break;
 
-                case History.ACTION_TYPE_REDO:
+                case HistoryAction.ACTION_TYPE_REDO:
                     redoCount++;
                     if (undoCount > 0) {
                         undoCount--;

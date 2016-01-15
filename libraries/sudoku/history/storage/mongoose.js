@@ -1,14 +1,14 @@
 "use strict";
 
-let Mongoose = require('mongoose'),
+let ModelSudokuHistoryAction = require('./../../../../models/sudoku/history/action'),
     HistoryStorageMemory = require('./memory'),
     HistoryAction = require('./../action');
 
 class HistoryStorageMongoose extends HistoryStorageMemory {
 
-    _setParameters (parameters = {}) {
+    _setParameters (parameters) {
         this.model = parameters.model;
-        if (!this.model.base instanceof Mongoose) {
+        if (!this.model instanceof ModelSudokuHistoryAction) {
             throw new Error('History storage Mongoose error. Wrong parameter.model type');
         }
 
@@ -20,7 +20,8 @@ class HistoryStorageMongoose extends HistoryStorageMemory {
 
         self.actions = [];
 
-        this.model.findByGameHash(this.gameHash, function (error, actionsRows) {
+        //this.model.findByGameHash(this.gameHash, function (error, actionsRows) {
+        this.model.find({gameHash: this.gameHash}, function (error, actionsRows) {
             if (error) return callback(error);
 
             actionsRows.forEach(function (row) {
@@ -31,6 +32,24 @@ class HistoryStorageMongoose extends HistoryStorageMemory {
             });
 
             callback(null);
+        });
+    }
+
+    _save (action, callback) {
+        let self = this,
+            superSave = super._save.bind(this),
+            storageAction = new this.model({
+            gameHash: this.gameHash,
+            created: new Date().getTime(),
+            actionType: action.type,
+            oldParameters: action.parameters.oldParameters,
+            newParameters: action.parameters.newParameters
+        });
+
+        storageAction.save(function (error) {
+            if (error) return callback(error);
+
+            superSave(action, callback);
         });
     }
 

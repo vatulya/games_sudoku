@@ -60,7 +60,7 @@ class History {
     }
 
     actionSetCells (oldParameters, newParameters, callback) {
-        let action = new HistoryAction(History.ACTION_TYPE_SET_CELLS, {
+        let action = new HistoryAction(HistoryAction.ACTION_TYPE_SET_CELLS, {
             oldParameters: oldParameters,
             newParameters: newParameters
         });
@@ -68,26 +68,41 @@ class History {
     }
 
     actionClearBoard (oldParameters, newParameters, callback) {
-
+        let action = new HistoryAction(HistoryAction.ACTION_TYPE_CLEAR_BOARD, {
+            oldParameters: oldParameters,
+            newParameters: newParameters
+        });
+        this.storage.saveAction(action, callback);
     }
 
-    actionDoUndo (oldParameters, callback) {
+    actionDoUndo (callback) {
+        let action = this.storage.getUndoAction();
 
+        if (!action instanceof HistoryAction) {
+            // No undo move
+            callback(null);
+        }
+
+        action = new HistoryAction(HistoryAction.ACTION_TYPE_UNDO, {
+            oldParameters: action.parameters.newParameters,
+            newParameters: action.parameters.oldParameters
+        });
+        this.storage.saveAction(action, callback);
     }
 
-    actionDoRedo (oldParameters, callback) {
+    actionDoRedo (callback) {
+        let action = this.storage.getRedoAction();
 
-    }
+        if (!action instanceof HistoryAction) {
+            // No redo move
+            callback(null);
+        }
 
-    /**
-     * @deprecated
-     *
-     * @param actionType
-     * @param actionData
-     * @param callback
-     */
-    addAction (actionType, actionData, callback) {
-        this.storage.saveAction(actionType, actionData, callback);
+        action = new HistoryAction(HistoryAction.ACTION_TYPE_REDO, {
+            oldParameters: action.parameters.newParameters,
+            newParameters: action.parameters.oldParameters
+        });
+        this.storage.saveAction(action, callback);
     }
 
     getUndo () {
@@ -105,7 +120,7 @@ class History {
     /********************************************** STATIC METHODS ***/
 
     static create (gameHash, callback) {
-        let storage = new (HistoryStorage('memory'))(gameHash, {model: ModelSudokuHistoryAction});
+        let storage = new (HistoryStorage('mongoose'))(gameHash, {model: ModelSudokuHistoryAction});
 
         storage.init(function (error) {
             if (error) return callback(error);
@@ -114,7 +129,7 @@ class History {
     }
 
     static load (gameHash, callback) {
-        let storage = new (HistoryStorage('memory'))(gameHash, {model: ModelSudokuHistoryAction});
+        let storage = new (HistoryStorage('mongoose'))(gameHash, {model: ModelSudokuHistoryAction});
 
         storage.init(function (error) {
             if (error) return callback(error);
@@ -122,22 +137,8 @@ class History {
         });
     }
 
-    static getAllowedActionTypes () {
-        return [
-            History.ACTION_TYPE_SET_CELLS,
-            History.ACTION_TYPE_CLEAR_BOARD,
-            History.ACTION_TYPE_UNDO,
-            History.ACTION_TYPE_REDO
-        ];
-    }
-
     /********************************************** /STATIC METHODS ***/
 
 }
-
-History.ACTION_TYPE_SET_CELLS = 'setCells';
-History.ACTION_TYPE_CLEAR_BOARD = 'clearBoard';
-History.ACTION_TYPE_UNDO = 'undo';
-History.ACTION_TYPE_REDO = 'redo';
 
 module.exports = History;
