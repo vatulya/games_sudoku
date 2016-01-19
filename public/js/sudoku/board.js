@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 class SudokuBoard {
 
@@ -27,22 +27,24 @@ class SudokuBoard {
     }
 
     initCells () {
-        var self = this;
+        let cellsPerRow = [],
+            cellsPerCol = [],
+            cellsPerSquare = [],
 
-        var cellsPerRow = [];
-        var cellsPerCol = [];
-        var cellsPerSquare = [];
+            allCells,
+            size;
 
         // Initialize cells
         this.cells = {};
-        var allCells = this.container.find('.cell');
-        var size = parseInt(Math.sqrt(allCells.length));
-        allCells.each(function (i, el) {
-            var Cell = new SudokuCell(el, size);
-            self.cells[Cell.coords.toString()] = Cell;
+        allCells = this.container.find('.cell');
+        size = parseInt(Math.sqrt(allCells.length));
+        allCells.each((i, el) => {
+            let Cell = new SudokuCell(el, size),
+                row = Cell.coords.row,
+                col = Cell.coords.col,
+                square = Cell.squareNumber;
 
-            var row = Cell.coords.row;
-            var col = Cell.coords.col;
+            this.cells[Cell.coords.toString()] = Cell;
 
             // Fill rows array
             if (!cellsPerRow[row]) {
@@ -57,7 +59,6 @@ class SudokuBoard {
             cellsPerCol[col][row] = Cell;
 
             // Fill squares array
-            var square = Cell.squareNumber;
             if (!cellsPerSquare[square]) {
                 cellsPerSquare[square] = [];
             }
@@ -70,20 +71,20 @@ class SudokuBoard {
 
         // Initialize rows
         this.rows = [];
-        $.each(cellsPerRow, function (row, cells) {
-            self.rows[row] = new SudokuCellRow(cells);
+        $.each(cellsPerRow, (row, cells) => {
+            this.rows[row] = new SudokuCellRow(cells);
         });
 
         // Initialize cols
         this.cols = [];
-        $.each(cellsPerCol, function (col, cells) {
-            self.cols[col] = new SudokuCellCol(cells);
+        $.each(cellsPerCol, (col, cells) => {
+            this.cols[col] = new SudokuCellCol(cells);
         });
 
         // Initialize squares
         this.squares = [];
-        $.each(cellsPerSquare, function (square, cells) {
-            self.squares[square] = new SudokuCellSquare(cells);
+        $.each(cellsPerSquare, (square, cells) => {
+            this.squares[square] = new SudokuCellSquare(cells);
         });
 
         // Calculate board size
@@ -95,25 +96,24 @@ class SudokuBoard {
     }
 
     initEvents () {
-        var self = this;
-
         this.board
-            .on('mouseover', '.cell', function () {
+            .on('mouseover', '.cell', (e) => {
+                let Cell = this.findCell(e.currentTarget);
                 // hover vertical col and horizontal row
-                self.hoverColAndRow($(this));
+                this.hoverColAndRow(Cell);
             })
-            .on('mouseout', function () {
+            .on('mouseout', () => {
                 // unhover vertical col and horizontal row
-                self.hoverColAndRow();
+                this.hoverColAndRow();
             })
-            .on('click', '.cell', function () {
+            .on('click', '.cell', () => {
                 // look mousedown/mouseup
             })
-            .on('mousedown', '.cell', function (e) {
-                var Cell = self.findCell(e.currentTarget);
-                self.selectCell(Cell);
+            .on('mousedown', '.cell', (e) => {
+                let Cell = this.findCell(e.currentTarget);
+                this.selectCell(Cell);
                 //Cell.container.addClass('pushed'); // TODO: move into numpad
-                self.hoverNumber(Cell.getNumber());
+                this.hoverNumber(Cell.getNumber());
             })
         ;
     }
@@ -127,20 +127,23 @@ class SudokuBoard {
 
     /********************************************** PUBLIC METHODS ***/
 
-    getBoardHash () {
-        var boardString = '';
+    getHash () {
+        let boardString = '',
+            Cell;
+
         for (var key in this.cells) {
             if (this.cells.hasOwnProperty(key)) {
-                var Cell = this.cells[key];
+                Cell = this.cells[key];
                 boardString += '' + Cell.getNumber() + '_';
             }
         }
+
         return $.md5(boardString);
     }
 
     findCell (el) {
-        var Coords = new SudokuCellCoords(el);
-        var Cell = this.cells[Coords.toString()] || null;
+        let Coords = new SudokuCellCoords(el),
+            Cell = this.cells[Coords.toString()] || null;
 
         if (!Cell) {
             throw new Error('Can\'t find cell by "' + el + '" and coords "' + Coords.toString() + '"');
@@ -149,14 +152,23 @@ class SudokuBoard {
         return Cell;
     }
 
-    fillBoard (board) {
-        var self = this;
+    fill (board) {
+        let self = this;
+
         $.each(board.openedCells || {}, function(coords, number) {
-            var Cell = self.findCell(coords);
+            let Cell = self.findCell(coords);
             Cell.setNumber(number);
             Cell.container.removeClass('open marks').addClass('locked');
         });
-        this.applyBoardState(board);
+        this.applyState(board);
+    }
+
+    show () {
+        this.board.removeClass('hide-game');
+    }
+
+    hide () {
+        this.board.addClass('hide-game');
     }
 
     /**
@@ -165,14 +177,15 @@ class SudokuBoard {
      *
      * @param boardState
      */
-    applyBoardState (boardState) {
-        var self = this;
+    applyState (boardState) {
+        let self = this;
+
         $.each(boardState.checkedCells || {}, function(coords, number) {
-            var Cell = self.findCell(coords);
+            let Cell = self.findCell(coords);
             Cell.setNumber(number);
         });
         $.each(boardState.markedCells || {}, function(coords, marks) {
-            var Cell = self.findCell(coords);
+            let Cell = self.findCell(coords);
             Cell.setMarks(marks);
             if (Cell.getMarks() && !Cell.getNumber()) {
                 Cell.container.addClass('marks');
@@ -180,22 +193,16 @@ class SudokuBoard {
         });
     }
 
-    showBoard () {
-        this.board.removeClass('hide-game');
-    }
-
-    hideBoard () {
-        this.board.addClass('hide-game');
-    }
-
-    getBoardState () {
-        var state = {
+    getState () {
+        let state = {
             openedCells: {},
             checkedCells: {},
             markedCells: {}
         };
+
         $.each(this.cells, function (i, Cell) {
-            var coords = Cell.coords.toString();
+            let coords = Cell.coords.toString();
+
             if (!Cell.isOpen()) {
                 state.openedCells[coords] = Cell.getNumber();
             } else {
@@ -205,6 +212,7 @@ class SudokuBoard {
                 state.markedCells[coords] = Cell.getMarks();
             }
         });
+
         return state;
     }
 
@@ -233,7 +241,7 @@ class SudokuBoard {
     }
 
     setCellNumber (cell, number) {
-        var Cell = this.findCell(cell);
+        let Cell = this.findCell(cell);
         if (Cell.isOpen()) {
             Cell.setNumber(number);
             Cell.getNumber() ? Cell.hideMarks() : Cell.showMarks();
@@ -241,7 +249,7 @@ class SudokuBoard {
     }
 
     addCellMark (cell, mark) {
-        var Cell = this.findCell(cell);
+        let Cell = this.findCell(cell);
         if (Cell.isOpen()) {
             Cell.addMark(mark);
             if (Cell.isEmpty()) {
@@ -251,7 +259,7 @@ class SudokuBoard {
     }
 
     setCellMarks (cell, marks) {
-        var Cell = this.findCell(cell);
+        let Cell = this.findCell(cell);
         if (Cell.isOpen()) {
             Cell.setMarks(marks);
             if (Cell.isEmpty()) {
@@ -261,28 +269,27 @@ class SudokuBoard {
     }
 
     removeColRowMarks (cell, mark) {
-        var Cell = this.findCell(cell);
-        this.rows[Cell.coords.getRow()].each(function (i, CellRow) {
+        let Cell = this.findCell(cell);
+        this.rows[Cell.coords.getRow()].each((i, CellRow) => {
             CellRow.removeMark(mark);
         });
-        this.cols[Cell.coords.getCol()].each(function (i, CellCol) {
+        this.cols[Cell.coords.getCol()].each((i, CellCol) => {
             CellCol.removeMark(mark);
         });
     }
 
-    clearBoard () {
-        var self = this;
-        $.each(this.cells, function (i, Cell) {
+    clear () {
+        $.each(this.cells, (i, Cell) => {
             if (Cell.isOpen()) {
                 self.setCell(Cell, 0, []);
             }
         });
     }
 
-    hoverColAndRow (cell) { // TURNED OFF
+    hoverColAndRow (Cell) { // TURNED OFF
         this.board.find('.cell.hover').removeClass('hover');
-        if (cell) {
-            var Cell = this.findCell(cell);
+        if (Cell) {
+            Cell = this.findCell(Cell);
             this.board.find('.cell.' + Cell.coords.getRowCssClass() + ', .cell.' + Cell.coords.getColCssClass()).addClass('hover'); // Hover row and col
             Cell.container.removeClass('hover'); // But don't hover focus cell
         }
@@ -292,7 +299,7 @@ class SudokuBoard {
         this.board.find('.cell.hovered').removeClass('hovered');
         number = parseInt(number);
         if (number > 0) {
-            $.each(this.cells, function (i, Cell) {
+            $.each(this.cells, (i, Cell) => {
                 if (Cell.getNumber() == number) {
                     Cell.container.addClass('hovered');
                 }
@@ -301,22 +308,20 @@ class SudokuBoard {
     }
 
     showErrors (errors) {
-        var self = this;
-
         if (!errors) {
             this.board.addClass('no-errors');
         } else {
-            $.each(errors, function (i, coords) {
-                var Cell = self.findCell(coords);
+            $.each(errors, (i, coords) => {
+                let Cell = this.findCell(coords);
                 if (Cell) {
                     Cell.container.addClass('error');
                 }
             });
         }
 
-        setTimeout(function () {
-            self.board.removeClass('no-errors');
-            self.board.find('.cell.error').removeClass('error');
+        setTimeout(() => {
+            this.board.removeClass('no-errors');
+            this.board.find('.cell.error').removeClass('error');
         }, 2000);
     }
 
@@ -324,11 +329,46 @@ class SudokuBoard {
         return !(this.board.find('.cell.empty').length > 0);
     }
 
-    resolved () {
+    setResolved () {
         this.container.addClass('resolved');
     }
 
-    /********************************************** PUBLIC METHODS ***/
+    /********************************************** /PUBLIC METHODS ***/
+
+    /********************************************** STATIC METHODS ***/
+
+    static getDiff (oldState, newState) {
+        let diff = {
+                checkedCells: {},
+                markedCells: {}
+            },
+            keys = [];
+
+        // checkedCells
+        keys = [];
+        keys.push(...Object.keys(oldState.checkedCells),...Object.keys(newState.checkedCells));
+        keys = $.unique(keys);
+        keys.forEach((key) => {
+            if (parseInt(oldState.checkedCells[key]) != parseInt(newState.checkedCells[key])) {
+                diff.checkedCells[key] = parseInt(newState.checkedCells[key]);
+            }
+        });
+
+        // markedCells
+        keys = [];
+        keys.push(...Object.keys(oldState.markedCells),...Object.keys(newState.markedCells));
+        keys = $.unique(keys);
+        keys.forEach((key) => {
+            if (JSON.stringify(oldState.markedCells[key]) != JSON.stringify(newState.markedCells[key])) {
+                diff.markedCells[key] = newState.markedCells[key];
+            }
+        });
+
+        return diff;
+    }
+
+    /********************************************** /STATIC METHODS ***/
+
 
 }
 

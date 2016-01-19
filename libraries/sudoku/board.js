@@ -37,7 +37,7 @@ let ModelSudokuBoard = require('./../../models/sudoku/board'),
  * @param BoardStorageNull storage
  * @constructor
  */
-let Board = class {
+class SudokuBoard {
 
     /********************************************** STATIC METHODS ***/
 
@@ -92,17 +92,17 @@ let Board = class {
     }
 
     static createCellsFromBoardHash (parameters) {
-        let board = new Board(new BoardStorageHash(parameters));
+        let board = new SudokuBoard(new BoardStorageHash(parameters));
 
         return board.cells;
     }
 
     static create (parameters, callback) {
-        Board.generate(parameters, function (error, simpleBoardHash, squares) {
+        SudokuBoard.generate(parameters, function (error, simpleBoardHash, squares) {
             if (error) { return callback(error); }
 
-            parameters = Board.convertSimpleBoardHashToParameters(simpleBoardHash, squares);
-            Board.hideCells(parameters.openedCells, 15);/* parameters.difficulty.getHiddenCellsCount() */
+            parameters = SudokuBoard.convertSimpleBoardHashToParameters(simpleBoardHash, squares);
+            SudokuBoard.hideCells(parameters.openedCells, 15);/* parameters.difficulty.getHiddenCellsCount() */
 
             parameters = { // prepare parameters to save
                 size: parameters.size,
@@ -116,7 +116,7 @@ let Board = class {
             storage.save(parameters, function (error) {
                 if (error) { return callback(error); }
 
-                callback(null, new Board(storage));
+                callback(null, new SudokuBoard(storage));
             });
         });
     }
@@ -126,7 +126,7 @@ let Board = class {
             if (error) { return callback(error); }
             if (!model) { return callback(new Error('Wrong board ID')); }
 
-            let board = new Board(new BoardStorageMongoose(model));
+            let board = new SudokuBoard(new BoardStorageMongoose(model));
             callback(null, board);
         });
     }
@@ -143,7 +143,7 @@ let Board = class {
         this.cols = [];
         this.squares = [];
 
-        this.init(Board.getParametersFromStorage(storage));
+        this.init(SudokuBoard.getParametersFromStorage(storage));
     }
 
     /********************************************** INIT ***/
@@ -253,6 +253,29 @@ let Board = class {
 
     getId () {
         return this.storage.getId();
+    }
+
+    getEmptyBoard () {
+        let parameters = {
+                checkedCells: {},
+                markedCells: {}
+            },
+            allCoords = Object.keys(this.cells),
+            cell;
+
+        allCoords.forEach(function (coords) {
+            cell = this.board[coords];
+            if (!cell.isOpen) {
+                if (cell.number) {
+                    parameters.checkedCells[coords] = 0;
+                }
+                if (cell.marks.length) {
+                    parameters.markedCells[coords] = [];
+                }
+            }
+        });
+
+        return parameters;
     }
 
     /**
@@ -431,7 +454,7 @@ let Board = class {
         let size = Math.sqrt(Object.keys(board).length),
             coords;
 
-        if (Board.getAllowedSizes().indexOf(size) === -1) {
+        if (SudokuBoard.getAllowedSizes().indexOf(size) === -1) {
             return false;
         }
         for (coords in board) {
@@ -452,6 +475,6 @@ let Board = class {
 
     /********************************************** /FOR TESTS ***/
 
-};
+}
 
-module.exports = Board;
+module.exports = SudokuBoard;

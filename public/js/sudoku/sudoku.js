@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 /**
  * Function-helper
@@ -6,7 +6,7 @@
  * @param el
  * @returns {Sudoku}
  */
-function initSudoku(el) {
+function initSudoku (el) {
     return new Sudoku(ws, new SudokuBoard(el));
 }
 
@@ -86,7 +86,7 @@ class Sudoku {
         parameters = $.extend({
             '_game_hash': this.hash,
             //'_action': action,
-            '_hash': this.board.getBoardHash()
+            '_hash': this.board.getHash()
         }, parameters || {});
         this.ws.emit(action, parameters);
     }
@@ -107,13 +107,13 @@ class Sudoku {
 
     start () {
         this.sendUserAction('start');
-        this.board.showBoard();
+        this.board.show();
         this._startDurationTimer();
     }
 
     pause () {
         this.sendUserAction('pause');
-        this.board.hideBoard();
+        this.board.hide();
         this._stopDurationTimer();
     }
 
@@ -122,8 +122,11 @@ class Sudoku {
         if (number < 0 || number > this.getSize()) {
             throw new Error('Can\'t set number "' + number + '". Wrong number.');
         }
-        this.board.setCell(cell, number);
-        this.sendUserAction('setCell', this.board.getBoardState());
+
+        let diff = this._doBoardAction(() => {
+            this.board.setCell(cell, number);
+        });
+        this.sendUserAction('setCell', diff);
         this.checkAllowedNumbers();
     }
 
@@ -132,18 +135,23 @@ class Sudoku {
         if (number < 1 || number > this.getSize()) {
             throw new Error('Can\'t set mark "' + number + '". Wrong number.');
         }
-        this.board.toggleCellMark(cell, number);
-        this.sendUserAction('setCell', this.board.getBoardState());
+
+        let diff = this._doBoardAction(() => {
+            this.board.toggleCellMark(cell, number);
+        });
+        this.sendUserAction('setCell', diff);
     }
 
     clearCellMark (cell) {
-        this.board.setCellMarks(cell, []);
-        this.sendUserAction('setCell', this.board.getBoardState());
+        let diff = this._doBoardAction(() => {
+            this.board.setCellMarks(cell, []);
+        });
+        this.sendUserAction('setCell', diff);
     }
 
     clearBoard () {
         this.history.clear();
-        this.board.clearBoard();
+        this.board.clear();
         this.sendUserAction('clearBoard');
     }
 
@@ -178,7 +186,7 @@ class Sudoku {
     }
 
     loadBoardResponse (response) {
-        this.board.fillBoard(response);
+        this.board.fill(response);
         this.checkAllowedNumbers();
         this.start();
     }
@@ -194,6 +202,14 @@ class Sudoku {
     /********************************************** /WS METHODS RESPONSES ***/
 
     /********************************************** PROTECTED METHODS ***/
+
+    _doBoardAction (action) {
+        let oldState = this.board.getState();
+
+        action();
+
+        return SudokuBoard.getDiff(oldState, this.board.getState());
+    }
 
     _checkGameHash () {
         // TODO: add logic to this method
@@ -223,7 +239,7 @@ class Sudoku {
     }
 
     _win () {
-        this.board.resolved();
+        this.board.setResolved();
         this._stopDurationTimer();
     }
 
@@ -274,8 +290,11 @@ class Sudoku {
     useHistory (historyType) {
         var move = historyType == 'undo' ? this.history.getUndo() : this.history.getRedo();
         this.history.clear();
-        this.board.applyBoardState(move);
-        this.sendUserAction('useHistory', $.extend({historyType: historyType}, this.board.getBoardState()));
+
+        let diff = this._doBoardAction(() => {
+            this.board.applyState(move);
+        });
+        this.sendUserAction('useHistory', $.extend({historyType: historyType}, diff));
         this.checkAllowedNumbers();
     }
 
@@ -288,7 +307,7 @@ class Sudoku {
                 numbersCount.hasOwnProperty(number) ? numbersCount[number]++ : numbersCount[number] = 1;
             }
         });
-        $.each(this.allowedNumbers, function(number, isAllowed) {
+        $.each(this.allowedNumbers, function (number, isAllowed) {
             self.allowedNumbers[number] = !(numbersCount.hasOwnProperty('' + number) && numbersCount['' + number] >= self.size);
         });
 
@@ -300,7 +319,3 @@ class Sudoku {
 }
 
 $.extend(Sudoku.prototype, MixinEvent);
-
-
-
-

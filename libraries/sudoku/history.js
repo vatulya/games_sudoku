@@ -120,7 +120,7 @@ class History {
     /********************************************** STATIC METHODS ***/
 
     static create (gameHash, callback) {
-        let storage = new (HistoryStorage('mongoose'))(gameHash, {model: ModelSudokuHistoryAction});
+        let storage = new (HistoryStorage('memory'))(gameHash, {model: ModelSudokuHistoryAction});
 
         storage.init(function (error) {
             if (error) return callback(error);
@@ -129,7 +129,7 @@ class History {
     }
 
     static load (gameHash, callback) {
-        let storage = new (HistoryStorage('mongoose'))(gameHash, {model: ModelSudokuHistoryAction});
+        let storage = new (HistoryStorage('memory'))(gameHash, {model: ModelSudokuHistoryAction});
 
         storage.init(function (error) {
             if (error) return callback(error);

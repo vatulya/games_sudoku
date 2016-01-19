@@ -7,7 +7,7 @@ let ModelSudoku = require('./../models/sudoku'),
     SudokuHistory = require('./sudoku/history'),
     SudokuGames = {};
 
-let Sudoku = class {
+class Sudoku {
 
     /********************************************** STATIC METHODS ***/
 
@@ -108,14 +108,14 @@ let Sudoku = class {
         return this.board.getCellByCoords(row, col);
     }
 
-    doUserAction (data, callback) {
+    setCells (data, callback) {
         let self = this,
             toCells = {},
             diff = {},
             undoDiff = {};
 
         if (!this.board.isCorrectParameters(data || {})) {
-            return callback(new Error('Wrong user action data'));
+            return callback(new Error('Wrong user data'));
         }
 
         toCells = SudokuBoard.createCellsFromBoardHash(extend(data, {size: this.board.size}));
@@ -136,8 +136,40 @@ let Sudoku = class {
         });
     }
 
-    useHistory (historyType, callback) {
+    clearBoard (data, callback) {
+        let self = this,
+            toCells = {},
+            diff = {},
+            undoDiff = {};
+
+        if (!this.board.isCorrectParameters(data || {})) {
+            return callback(new Error('Wrong user data'));
+        }
+
+        toCells = this.board.getEmptyBoard();
+
+        diff = this.history.getDiff(this.board.cells, toCells);
+        undoDiff = this.history.getDiff(diff, this.board.cells);
+
+        if (!Object.keys(diff.checkedCells).length && !Object.keys(diff.markedCells).length) {
+            callback(new Error('Saving data error'));
+        }
+
+        this.board.applyDiff(diff, function (error) {
+            if (error) { return callback(error); }
+            self.history.actionClearBoard(undoDiff, diff, function (error) {
+                if (error) { return callback(error); }
+                callback(null);
+            });
+        });
+    }
+
+    useHistory (historyType, data, callback) {
         let method = historyType === 'redo' ? 'actionDoRedo' : 'actionDoUndo';
+
+        if (!this.board.isCorrectParameters(data || {})) {
+            return callback(new Error('Wrong user data'));
+        }
 
         this.history[method](function (error) {
             if (error) return callback(error);
@@ -160,6 +192,6 @@ let Sudoku = class {
 
     /********************************************** /PUBLIC METHODS ***/
 
-};
+}
 
 module.exports = Sudoku;

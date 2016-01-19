@@ -15,7 +15,7 @@ let CellCoords = require('./cell/coords');
  * @param parameters
  * @constructor
  */
-let Cell = class {
+class Cell {
 
     constructor (parameters) {
         this.coords = null;
@@ -113,6 +113,6 @@ let Cell = class {
 
     /***************** /MARK ***/
 
-};
+}
 
 module.exports = Cell;
