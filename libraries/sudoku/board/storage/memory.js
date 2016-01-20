@@ -1,8 +1,10 @@
-"use strict";
+'use strict';
 
 let extend = require('util')._extend;
 
-let mongooseStorage = class {
+let BoardStorageAbstract = require('./abstract');
+
+class BoardStorageMemory extends BoardStorageAbstract {
 
     constructor(hash) {
         this.hash = hash;
@@ -21,6 +23,6 @@ let mongooseStorage = class {
         callback(null);
     }
 
-};
+}
 
-module.exports = mongooseStorage;
+module.exports = BoardStorageMemory;

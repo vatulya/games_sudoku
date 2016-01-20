@@ -30,7 +30,7 @@ class HistoryStorageMemory extends HistoryStorageAbstract {
         self.undo = {};
         self.redo = {};
 
-        if (!revertedActions.every(function (action) { return action instanceof HistoryAction; })) {
+        if (!revertedActions.every(function (action) { return (action instanceof HistoryAction); })) {
             return callback(new Error('History action error. Wrong action type.'));
         }
 

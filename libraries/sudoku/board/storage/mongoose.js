@@ -1,8 +1,11 @@
-"use strict";
+'use strict';
 
-let mongooseStorage = class {
+let BoardStorageAbstract = require('./abstract');
+
+class BoardStorageMongoose extends BoardStorageAbstract {
 
     constructor(model) {
+        super();
         this.model = model;
     }
 
@@ -28,6 +31,6 @@ let mongooseStorage = class {
         });
     }
 
-};
+}
 
-module.exports = mongooseStorage;
+module.exports = BoardStorageMongoose;

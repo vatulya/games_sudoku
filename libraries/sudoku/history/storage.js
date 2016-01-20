@@ -6,4 +6,7 @@ let HistoryStorageFactory = function (adapterName) {
     return require(modulePath);
 };
 
+HistoryStorageFactory.ADAPTER_MEMORY = 'memory';
+HistoryStorageFactory.ADAPTER_MONGOOSE = 'mongoose';
+
 module.exports = HistoryStorageFactory;

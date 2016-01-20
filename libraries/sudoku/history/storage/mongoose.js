@@ -8,10 +8,7 @@ class HistoryStorageMongoose extends HistoryStorageMemory {
 
     _setParameters (parameters) {
         this.model = parameters.model;
-        if (!this.model instanceof ModelSudokuHistoryAction) {
-            throw new Error('History storage Mongoose error. Wrong parameter.model type');
-        }
-
+        // Here must be check if this.model contains correct instance. But I don't know how to check Mongoose objects.
         return super._setParameters(parameters);
     }
 
@@ -39,12 +36,12 @@ class HistoryStorageMongoose extends HistoryStorageMemory {
         let self = this,
             superSave = super._save.bind(this),
             storageAction = new this.model({
-            gameHash: this.gameHash,
-            created: new Date().getTime(),
-            actionType: action.type,
-            oldParameters: action.parameters.oldParameters,
-            newParameters: action.parameters.newParameters
-        });
+                gameHash: this.gameHash,
+                created: new Date().getTime(),
+                actionType: action.type,
+                oldParameters: action.parameters.oldParameters,
+                newParameters: action.parameters.newParameters
+            });
 
         storageAction.save(function (error) {
             if (error) return callback(error);

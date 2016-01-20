@@ -159,6 +159,36 @@ class Sudoku {
         this.sendUserAction('checkBoard');
     }
 
+    useHistory (historyType) {
+        let move,
+            actionName;
+
+        switch (historyType) {
+            case 'undo':
+                move = this.history.getUndo();
+                actionName = 'undoMove';
+                break;
+
+            case 'redo':
+                move = this.history.getRedo();
+                actionName = 'redoMove';
+                break;
+
+            default:
+                //error
+                return;
+                break;
+        }
+
+        this.history.clear();
+
+        let diff = this._doBoardAction(() => {
+            this.board.applyState(move);
+        });
+        this.sendUserAction(actionName, diff);
+        this.checkAllowedNumbers();
+    }
+
     /********************************************** /WS METHODS ***/
 
     /********************************************** WS METHODS RESPONSES ***/
@@ -285,17 +315,6 @@ class Sudoku {
             }
             this.board.hoverNumber(Cell.getNumber());
         }
-    }
-
-    useHistory (historyType) {
-        var move = historyType == 'undo' ? this.history.getUndo() : this.history.getRedo();
-        this.history.clear();
-
-        let diff = this._doBoardAction(() => {
-            this.board.applyState(move);
-        });
-        this.sendUserAction('useHistory', $.extend({historyType: historyType}, diff));
-        this.checkAllowedNumbers();
     }
 
     checkAllowedNumbers () {

@@ -1,11 +1,12 @@
-"use strict";
-
-let extend = require('util')._extend;
+'use strict';
 
 let ModelSudoku = require('./../models/sudoku'),
     SudokuBoard = require('./sudoku/board'),
+    SudokuBoardGeneratorSimple = require('./sudoku/board/generator/simple'),
     SudokuHistory = require('./sudoku/history'),
-    SudokuGames = {};
+    SudokuHistoryAction = require('./sudoku/history/action'),
+
+    SudokuGames = {}; // cache
 
 class Sudoku {
 
@@ -24,14 +25,14 @@ class Sudoku {
             return;
         }
 
-        ModelSudoku.findOneByHash(hash, function (error, modelSudoku) {
+        ModelSudoku.findOneByHash(hash, (error, modelSudoku) => {
             if (error) { return callback(error); }
             if (!modelSudoku) { return callback(new Error('Wrong hash')); }
 
-            SudokuBoard.load(modelSudoku.get('boardId'), function (error, sudokuBoard) {
+            SudokuBoard.load(modelSudoku.get('boardId'), (error, sudokuBoard) => {
                 if (error) { return callback(error); }
 
-                SudokuHistory.load(hash, function (error, sudokuHistory) {
+                SudokuHistory.load(hash, (error, sudokuHistory) => {
                     if (error) { return callback(error); }
                     if (!modelSudoku) { return callback(new Error('Wrong board ID')); }
 
@@ -43,9 +44,9 @@ class Sudoku {
     }
 
     static create (hash, callback) {
-        let parameters,
-            sudoku,
-            modelSudoku;
+        let sudoku,
+            modelSudoku,
+            generator;
 
         if (typeof hash !== 'string' || !hash) {
             return callback(new Error('Wrong hash'));
@@ -56,22 +57,23 @@ class Sudoku {
 
         sudoku = new Sudoku(modelSudoku);
 
-        // Sync set board and set history
-        parameters = {
-            size: 9
-        };
-        SudokuBoard.create(parameters, function (error, sudokuBoard) {
+        generator = new SudokuBoardGeneratorSimple();
+        generator.generate(9, (error, parameters) => {
             if (error) { return callback(error); }
 
-            modelSudoku.set('boardId', sudokuBoard.getId());
-
-            SudokuHistory.create(hash, function (error, sudokuHistory) {
+            SudokuBoard.create(parameters, (error, sudokuBoard) => {
                 if (error) { return callback(error); }
 
-                modelSudoku.save(function (error) {
+                modelSudoku.set('boardId', sudokuBoard.getId());
+
+                SudokuHistory.create(hash, (error, sudokuHistory) => {
                     if (error) { return callback(error); }
 
-                    callback(null, sudoku);
+                    modelSudoku.save((error) => {
+                        if (error) { return callback(error); }
+
+                        callback(null, sudoku);
+                    });
                 });
             });
         });
@@ -101,79 +103,116 @@ class Sudoku {
     }
 
     getSize () {
-        return this.board.size;
+        return this.board.getSize();
     }
 
     getCellByCoords (row, col) {
         return this.board.getCellByCoords(row, col);
     }
 
-    setCells (data, callback) {
-        let self = this,
-            toCells = {},
-            diff = {},
-            undoDiff = {};
+    getUndo () {
+        let action = this.history.getUndo(),
+            changes = {};
 
-        if (!this.board.isCorrectParameters(data || {})) {
-            return callback(new Error('Wrong user data'));
+        if (action instanceof SudokuHistoryAction) {
+            changes = this.board.diff(action.parameters.newParameters || {});
         }
 
-        toCells = SudokuBoard.createCellsFromBoardHash(extend(data, {size: this.board.size}));
+        return changes;
+    }
 
-        diff = this.history.getDiff(this.board.cells, toCells);
-        undoDiff = this.history.getDiff(toCells, this.board.cells);
+    getRedo () {
+        let action = this.history.getRedo(),
+            changes = {};
 
-        if (!Object.keys(diff.checkedCells).length && !Object.keys(diff.markedCells).length) {
+        if (action instanceof SudokuHistoryAction) {
+            changes = this.board.diff(action.parameters.newParameters || {});
+        }
+
+        return changes;
+    }
+
+    setCells (data, callback) {
+        let changes = {
+                checkedCells: data.checkedCells,
+                markedCells: data.markedCells
+            },
+            action;
+
+        if (!Object.keys(changes.checkedCells).length && !Object.keys(changes.markedCells).length) {
             callback(new Error('Saving data error'));
         }
 
-        this.board.applyDiff(diff, function (error) {
+        this.board.apply(changes, (error, oldParameters, newParameters) => {
             if (error) { return callback(error); }
-            self.history.actionSetCells(undoDiff, diff, function (error) {
-                if (error) { return callback(error); }
-                callback(null);
+
+            action = new SudokuHistoryAction(SudokuHistoryAction.ACTION_TYPE_SET_CELLS, {
+                oldParameters: oldParameters,
+                newParameters: newParameters
             });
+            this.history.addAction(action, callback);
         });
     }
 
     clearBoard (data, callback) {
-        let self = this,
-            toCells = {},
-            diff = {},
-            undoDiff = {};
+        let action;
 
-        if (!this.board.isCorrectParameters(data || {})) {
-            return callback(new Error('Wrong user data'));
-        }
-
-        toCells = this.board.getEmptyBoard();
-
-        diff = this.history.getDiff(this.board.cells, toCells);
-        undoDiff = this.history.getDiff(diff, this.board.cells);
-
-        if (!Object.keys(diff.checkedCells).length && !Object.keys(diff.markedCells).length) {
-            callback(new Error('Saving data error'));
-        }
-
-        this.board.applyDiff(diff, function (error) {
+        this.board.clear((error, oldParameters, newParameters) => {
             if (error) { return callback(error); }
-            self.history.actionClearBoard(undoDiff, diff, function (error) {
-                if (error) { return callback(error); }
-                callback(null);
+
+            action = new SudokuHistoryAction(SudokuHistoryAction.ACTION_TYPE_CLEAR_BOARD, {
+                oldParameters: oldParameters,
+                newParameters: newParameters
             });
+            this.history.addAction(action, callback);
         });
     }
 
-    useHistory (historyType, data, callback) {
-        let method = historyType === 'redo' ? 'actionDoRedo' : 'actionDoUndo';
+    undoMove (data, callback) {
+        this._useHistory('undo', callback);
+    }
 
-        if (!this.board.isCorrectParameters(data || {})) {
-            return callback(new Error('Wrong user data'));
+
+    redoMove (data, callback) {
+        this._useHistory('undo', callback);
+    }
+
+    _useHistory (type, callback) {
+        let method,
+            actionType,
+            changes,
+            action;
+
+        switch (type) {
+            case 'undo':
+                method = 'getUndo';
+                actionType = SudokuHistoryAction.ACTION_TYPE_UNDO;
+                break;
+
+            case 'redo':
+                method = 'getRedo';
+                actionType = SudokuHistoryAction.ACTION_TYPE_REDO;
+                break;
+
+            default:
+                return callback (new Error('Can\'t use Sudoku history. Wrong type "' + type + '"'));
+                break;
         }
 
-        this.history[method](function (error) {
-            if (error) return callback(error);
-            callback(null);
+        changes = this.history[method]();
+
+        if (!Object.keys(changes.checkedCells).length && !Object.keys(changes.markedCells).length) {
+            callback(new Error('Nothing to ' + type));
+        }
+
+        this.board.apply(changes, (error, oldParameters, newParameters) => {
+            if (error) { return callback(error); }
+
+            action = new SudokuHistoryAction(actionType, {
+                oldParameters: oldParameters,
+                newParameters: newParameters
+            });
+            this.history.addAction(action, callback);
         });
     }
 
@@ -181,8 +220,8 @@ class Sudoku {
         return {
             _system: {
                 gameHash: this.getHash(),
-                undoMove: this.history.getUndo(),
-                redoMove: this.history.getRedo(),
+                undoMove: this.getUndo(),
+                redoMove: this.getRedo(),
                 duration: 15, // this.duration,
                 microtime: new Date().getTime(),
                 resolved: this.board.isResolved()

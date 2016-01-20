@@ -54,7 +54,9 @@ class HistoryStorageAbstract {
     saveAction (action, callback) {
         let self = this;
 
-        if (!action instanceof HistoryAction) return callback(new Error('Save history action error. Wrong Action object'));
+        if (!(action instanceof HistoryAction)) {
+            return callback(new Error('Save history action error. Wrong Action object'));
+        }
 
         this._save(action, function (error) {
             if (error) return callback(error);
