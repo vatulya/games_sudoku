@@ -115,7 +115,7 @@ class Sudoku {
             changes = {};
 
         if (action instanceof SudokuHistoryAction) {
-            changes = this.board.diff(action.parameters.newParameters || {});
+            changes = this.board.diff(action.parameters.oldParameters || {});
         }
 
         return changes;
@@ -126,7 +126,7 @@ class Sudoku {
             changes = {};
 
         if (action instanceof SudokuHistoryAction) {
-            changes = this.board.diff(action.parameters.newParameters || {});
+            changes = this.board.diff(action.parameters.oldParameters || {});
         }
 
         return changes;
@@ -174,7 +174,7 @@ class Sudoku {
 
 
     redoMove (data, callback) {
-        this._useHistory('undo', callback);
+        this._useHistory('redo', callback);
     }
 
     _useHistory (type, callback) {
@@ -199,7 +199,7 @@ class Sudoku {
                 break;
         }
 
-        changes = this.history[method]();
+        changes = this[method]();
 
         if (!Object.keys(changes.checkedCells).length && !Object.keys(changes.markedCells).length) {
             callback(new Error('Nothing to ' + type));
