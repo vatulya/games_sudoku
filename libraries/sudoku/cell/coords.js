@@ -8,14 +8,14 @@ class CellCoords {
      * new CellCoords(1, 5)
      * new CellCoords("1_5") // check separator
      *
-     * If you don't need to create new Object (example: just check valid coords) then you can call Coords.parse(row, col)
+     * If you don't need to create new Object (example: just check valid coords) then you can call CellCoords.parse(row, col)
      *
      * @param {Number|String} row
      * @param {Number=} col
      * @constructor
      */
     constructor (row, col) {
-        let coords = Coords.parse(row, col);
+        let coords = CellCoords.parse(row, col);
 
         if (!coords) {
             throw new Error('Can\'t initialize Sudoku Cell Coords. Wrong parameters.');
