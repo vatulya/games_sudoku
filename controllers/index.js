@@ -1,6 +1,8 @@
-var router = require('express').Router();
+'use strict';
 
-router.get('/', function (req, res, next) {
+let router = require('express').Router();
+
+router.get('/', (req, res, next) => {
     res.render('index/index', {
         title: 'Express INDEX'
     });

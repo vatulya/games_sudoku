@@ -1,8 +1,8 @@
 'use strict';
 
-let extend = require('util')._extend;
+let extend = require('util')._extend,
 
-let BoardStorageAbstract = require('./abstract');
+    BoardStorageAbstract = require('./abstract');
 
 class BoardStorageMemory extends BoardStorageAbstract {
 

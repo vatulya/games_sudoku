@@ -21,8 +21,10 @@ class BoardGeneratorSimple {
 
         this.generateSimpleBoard(size, (error, board, squares) => {
             if (error) { return callback(error); }
+
             this.shuffleBoard(board, (error, board) => {
                 if (error) { return callback(error); }
+
                 this.mergeBoardRows(board, (error, board) => {
                     if (error) { return callback(error); }
 

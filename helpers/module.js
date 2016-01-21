@@ -8,34 +8,35 @@ let Path = require('path');
  * let OtherModule = Module('./otherModule');
  * ...
  * OtherModule().moduleLogic();
+ * obj = new (OtherModule())(constructorParams);
  * @type {{}}
  */
 
-let modules = {};
-let dir = '';
+let modules = {},
+    dir = '';
 
 let Module = function (modulePath, forceLoad) {
     if (!modulePath || typeof modulePath != 'string') {
         throw new Error('Wrong module path "' + modulePath + '"');
     }
-    modulePath = Path.resolve(dir, modulePath);
 
-    if (!modules[modulePath]) {
-        modules[modulePath] = modulePath;
+    // NOT TESTED
+    let moduleAbsPath = Path.resolve(dir, modulePath);
+
+    if (!modules[moduleAbsPath]) {
+        modules[moduleAbsPath] = moduleAbsPath;
     }
 
     if (forceLoad) {
-        Module.load(modulePath);
+        Module.load(moduleAbsPath);
     }
 
-    return (function (p) {
-        return function () {
-            if (typeof modules[p] === 'string') {
-                Module.load(p);
-            }
-            return modules[p];
+    return () => {
+        if (typeof modules[moduleAbsPath] === 'string') {
+            Module.load(moduleAbsPath);
         }
-    })(modulePath);
+        return modules[moduleAbsPath];
+    };
 };
 
 Module.load = function (path) {

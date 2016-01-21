@@ -2,8 +2,7 @@
 
 let ModelSudokuHistoryAction = require('./../../models/sudoku/history/action'),
     HistoryStorage = require('./history/storage'),
-    HistoryAction = require('./history/action'),
-    Array = require('./../../helpers/array');
+    HistoryAction = require('./history/action');
 
 class History {
 
@@ -48,19 +47,21 @@ class History {
     /********************************************** STATIC METHODS ***/
 
     static create (gameHash, callback) {
-        let storage = new (HistoryStorage('mongoose'))(gameHash, {model: ModelSudokuHistoryAction});
+        let storage = new (HistoryStorage(HistoryStorage.ADAPTER_MONGOOSE))(gameHash, {model: ModelSudokuHistoryAction});
 
-        storage.init(function (error) {
-            if (error) return callback(error);
+        storage.init((error) => {
+            if (error) { return callback(error); }
+
             callback(null, new History(storage));
         });
     }
 
     static load (gameHash, callback) {
-        let storage = new (HistoryStorage('mongoose'))(gameHash, {model: ModelSudokuHistoryAction});
+        let storage = new (HistoryStorage(HistoryStorage.ADAPTER_MONGOOSE))(gameHash, {model: ModelSudokuHistoryAction});
 
-        storage.init(function (error) {
-            if (error) return callback(error);
+        storage.init((error) => {
+            if (error) { return callback(error); }
+
             callback(null, new History(storage));
         });
     }

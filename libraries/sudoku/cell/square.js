@@ -1,8 +1,8 @@
-"use strict";
+'use strict';
 
-let Group = require('./group');
+let CellGroup = require('./group');
 
-class Square extends Group {
+class CellSquare extends CellGroup {
 
     checkCellsStructure () {
         // TODO: check cells
@@ -11,4 +11,4 @@ class Square extends Group {
 
 }
 
-module.exports = Square;
+module.exports = CellSquare;

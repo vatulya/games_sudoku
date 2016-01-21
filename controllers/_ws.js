@@ -5,7 +5,7 @@ let extend = require('util')._extend,
     api = require('../libraries/api'),
     Sudoku = require('../libraries/sudoku');
 
-module.exports = function (socket) {
+module.exports = (socket) => {
 
     let io = socket.server;
 

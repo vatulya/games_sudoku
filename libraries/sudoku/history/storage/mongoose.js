@@ -1,7 +1,6 @@
-"use strict";
+'use strict';
 
-let ModelSudokuHistoryAction = require('./../../../../models/sudoku/history/action'),
-    HistoryStorageMemory = require('./memory'),
+let HistoryStorageMemory = require('./memory'),
     HistoryAction = require('./../action');
 
 class HistoryStorageMongoose extends HistoryStorageMemory {
@@ -18,10 +17,10 @@ class HistoryStorageMongoose extends HistoryStorageMemory {
         self.actions = [];
 
         //this.model.findByGameHash(this.gameHash, function (error, actionsRows) {
-        this.model.find({gameHash: this.gameHash}, function (error, actionsRows) {
-            if (error) return callback(error);
+        this.model.find({gameHash: this.gameHash}, (error, actionsRows) => {
+            if (error) { return callback(error); }
 
-            actionsRows.forEach(function (row) {
+            actionsRows.forEach((row) => {
                 self.actions.push(new HistoryAction(row.actionType, {
                     oldParameters: row.oldParameters,
                     newParameters: row.newParameters
@@ -33,20 +32,18 @@ class HistoryStorageMongoose extends HistoryStorageMemory {
     }
 
     _save (action, callback) {
-        let self = this,
-            superSave = super._save.bind(this),
-            storageAction = new this.model({
-                gameHash: this.gameHash,
-                created: new Date().getTime(),
-                actionType: action.type,
-                oldParameters: action.parameters.oldParameters,
-                newParameters: action.parameters.newParameters
-            });
+        let storageAction = new this.model({
+            gameHash: this.gameHash,
+            created: new Date().getTime(),
+            actionType: action.type,
+            oldParameters: action.parameters.oldParameters,
+            newParameters: action.parameters.newParameters
+        });
 
-        storageAction.save(function (error) {
+        storageAction.save((error) => {
             if (error) return callback(error);
 
-            superSave(action, callback);
+            return super._save(action, callback);
         });
     }
 

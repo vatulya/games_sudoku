@@ -1,22 +1,24 @@
-var url = require('url');
-var qs = require('qs');
-var crypto = require('crypto');
-var request = require('request');
-var extend = require('util')._extend;
+'use strict';
 
-var config = require('./config').get('api');
-var configGlobal = require('./config');
+let url = require('url'),
+    qs = require('qs'),
+    crypto = require('crypto'),
+    request = require('request'),
+    extend = require('util')._extend,
 
-var apiHost = config.host;
-var apiKey = config.public_key;
-var apiSecret = config.secret;
+    config = require('./config').get('api'),
+    configGlobal = require('./config'),
 
-var protectedPaths = [
-    '/sudoku/games/create',
-    '/test/protected' // for tests
-];
+    apiHost = config.host,
+    apiKey = config.public_key,
+    apiSecret = config.secret,
 
-module.exports.get = function (path, params, callback) {
+    protectedPaths = [
+        '/sudoku/games/create',
+        '/test/protected' // for tests
+    ];
+
+module.exports.get = (path, params, callback) => {
     if (protectedPaths.indexOf(path) >= 0) {
         makeProtectedRequest(path, params, callback);
     } else {
@@ -26,10 +28,9 @@ module.exports.get = function (path, params, callback) {
 
 function makeRequest(path, params, callback) {
     console.log('API REQUEST: ' + getUrl(path, params));
-    request.get(getUrl(path, params), function (error, response, body) {
-        if (error) {
-            return callback(error);
-        }
+    request.get(getUrl(path, params), (error, response, body) => {
+        if (error) { return callback(error); }
+
         if (response.statusCode != 200) {
             return callback(new Error('Response status code: "' + response.statusCode + '" [' + response.request.href + ']'));
         }
@@ -38,17 +39,16 @@ function makeRequest(path, params, callback) {
 }
 
 function makeProtectedRequest(path, params, callback) {
-    makeRequest('/tokens/create', {}, function (error, response) {
-        if (error || !response.token) {
-            return callback(new Error('Protected API call error'));
-        }
+    makeRequest('/tokens/create', {}, (error, response) => {
+        if (error || !response.token) { return callback(new Error('Protected API call error')); }
+
         params.token = response.token;
         makeRequest(path, params, callback);
     });
 }
 
 function getUrl(path, params) {
-    var options = {
+    let options = {
         protocol: 'http',
         host: apiHost,
         pathname: path,
@@ -58,34 +58,33 @@ function getUrl(path, params) {
 }
 
 function generateCheckSum (params) {
-    var keys = [];
-    for (var key in params) {
+    let keys = [],
+        sortedParams = {},
+        md5 = crypto.createHash('md5');
+
+    for (let key in params) {
         if (params.hasOwnProperty(key)) {
             keys.push(key);
         }
     }
     keys.sort();
 
-    var sortedParams = {};
-    for (var i in keys) {
-        key = keys[i];
+    keys.forEach((key) => {
         sortedParams[key] = params[key];
-    }
-
-    var md5 = crypto.createHash('md5');
+    });
 
     return md5.update(qs.stringify(sortedParams) + apiSecret).digest('hex');
 }
 
 function prepareParams (params) {
-    var prepared = extend({}, params || {});
+    let prepared = extend({}, params || {});
 
     if (configGlobal.get('XDEBUG_SESSION_START')) {
-        prepared['XDEBUG_SESSION_START'] = configGlobal.get('XDEBUG_SESSION_START');
+        prepared.XDEBUG_SESSION_START = configGlobal.get('XDEBUG_SESSION_START');
     }
 
-    prepared['api_key'] = apiKey;
-    prepared['check_sum'] = generateCheckSum(prepared);
+    prepared.api_key = apiKey;
+    prepared.check_sum = generateCheckSum(prepared);
     return prepared;
 }
 

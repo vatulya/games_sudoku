@@ -1,11 +1,11 @@
+'use strict';
+
 module.exports.unique = function (array) {
-    var a = array.concat(),
-        i,
-        j,
+    let a = array.concat(),
         length = a.length;
 
-    for (i = 0; i < length; i += 1) {
-        for (j = i + 1; j < length; j += 1) {
+    for (let i = 0; i < length; i += 1) {
+        for (let j = i + 1; j < length; j += 1) {
             if (a[i] === a[j]) {
                 j -= 1;
                 a.splice(j, 1);
@@ -18,7 +18,7 @@ module.exports.unique = function (array) {
 };
 
 module.exports.isDifferent = function (arrayA, arrayB) {
-    return (arrayA.length !== arrayB.length || !arrayA.every(function (element, i) {
+    return (arrayA.length !== arrayB.length || !arrayA.every((element, i) => {
         return element === arrayB[i];
     }));
 };

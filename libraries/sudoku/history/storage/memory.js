@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 let HistoryStorageAbstract = require('./abstract'),
     HistoryAction = require('./../action'),

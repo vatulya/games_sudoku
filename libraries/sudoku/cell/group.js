@@ -1,6 +1,6 @@
-"use strict";
+'use strict';
 
-class Group {
+class CellGroup {
 
     constructor (cells) {
         this.cells = cells; // [Cell]
@@ -20,4 +20,4 @@ class Group {
 
 }
 
-module.exports = Group;
+module.exports = CellGroup;

@@ -1,14 +1,14 @@
-"use strict";
+'use strict';
 
-let Group = require('./group');
+let CellGroup = require('./group');
 
-let Col = class extends Group {
+class CellCol extends CellGroup {
 
     checkCellsStructure () {
         // TODO: check cells
         return true;
     }
 
-};
+}
 
-module.exports = Col;
+module.exports = CellCol;

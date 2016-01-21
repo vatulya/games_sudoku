@@ -1,12 +1,12 @@
-"use strict";
+'use strict';
 
 let separator = '_';
 
-let Coords = class {
+class CellCoords {
 
     /**
-     * new Coords(1, 5)
-     * new Coords("1_5") // check separator
+     * new CellCoords(1, 5)
+     * new CellCoords("1_5") // check separator
      *
      * If you don't need to create new Object (example: just check valid coords) then you can call Coords.parse(row, col)
      *
@@ -64,6 +64,6 @@ let Coords = class {
         return false;
     }
 
-};
+}
 
-module.exports = Coords;
+module.exports = CellCoords;
