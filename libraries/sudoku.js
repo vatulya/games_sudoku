@@ -66,7 +66,7 @@ class Sudoku {
 
                 modelSudoku.set('boardId', sudokuBoard.getId());
 
-                SudokuHistory.create(hash, (error, sudokuHistory) => {
+                SudokuHistory.create(hash, (error) => {
                     if (error) { return callback(error); }
 
                     modelSudoku.save((error) => {
@@ -196,7 +196,7 @@ class Sudoku {
 
             default:
                 return callback (new Error('Can\'t use Sudoku history. Wrong type "' + type + '"'));
-                break;
+                //break;
         }
 
         changes = this[method]();
