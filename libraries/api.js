@@ -4,6 +4,7 @@ let url = require('url'),
     qs = require('qs'),
     crypto = require('crypto'),
     request = require('request'),
+    Promise = require('promise'),
     extend = require('util')._extend,
 
     config = require('./config').get('api'),
@@ -19,31 +20,40 @@ let url = require('url'),
     ];
 
 module.exports.get = (path, params, callback) => {
+    let promise;
+
     if (protectedPaths.indexOf(path) >= 0) {
-        makeProtectedRequest(path, params, callback);
+        promise = makeProtectedRequest(path, params, callback);
     } else {
-        makeRequest(path, params, callback);
+        promise = makeRequest(path, params, callback);
     }
+
+    return promise;
 };
 
-function makeRequest(path, params, callback) {
-    console.log('API REQUEST: ' + getUrl(path, params));
-    request.get(getUrl(path, params), (error, response, body) => {
-        if (error) { return callback(error); }
+function makeRequest(path, params) {
+    return new Promise(function (fulfill, reject) {
+        console.log('API REQUEST: ' + getUrl(path, params));
+        request.get(getUrl(path, params), (error, response, body) => {
+            if (error) { return reject(error); }
 
-        if (response.statusCode != 200) {
-            return callback(new Error('Response status code: "' + response.statusCode + '" [' + response.request.href + ']'));
-        }
-        return callback(null, JSON.parse(body));
+            if (response.statusCode !== 200) {
+                return reject(new Error('Response status code: "' + response.statusCode + '" [' + response.request.href + ']'));
+            }
+            fulfill(JSON.parse(body));
+        });
     });
 }
 
 function makeProtectedRequest(path, params, callback) {
-    makeRequest('/tokens/create', {}, (error, response) => {
-        if (error || !response.token) { return callback(new Error('Protected API call error')); }
+    return new Promise(function (fulfill, reject) {
+        makeRequest('/tokens/create', {}).then(function (response) {
+            if (!response.token) { return reject(new Error('Protected API call error')); }
 
-        params.token = response.token;
-        makeRequest(path, params, callback);
+            params.token = response.token;
+            makeRequest(path, params).then(fulfill).catch(reject);
+
+        }).catch(reject);
     });
 }
 

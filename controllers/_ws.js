@@ -15,11 +15,9 @@ module.exports = (socket) => {
         let params = {
             application: 'sudoku'
         };
-        api.get('/sudoku/games/create', params, (error, data) => {
-            if (error) { return forceRefresh(socket, error); }
-
+        api.get('/sudoku/games/create', params).then(function (response) {
             data = {
-                hash: data.hash,
+                hash: response.hash,
                 size: 9 // TODO: get this parameter from user side
             };
             Sudoku.create(data.hash, (error, sudoku) => {
@@ -28,6 +26,9 @@ module.exports = (socket) => {
                 let url = '/game/' + sudoku.getHash();
                 socket.emit('game:created', {url: url});
             });
+
+        }).catch(function (error) {
+            forceRefresh(socket, error);
         });
     });
 
