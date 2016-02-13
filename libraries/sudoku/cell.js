@@ -18,26 +18,15 @@ let CellCoords = require('./cell/coords');
 class Cell {
 
     constructor (parameters) {
-        this.coords = null;
-        this.squareNumber = 0;
-        this.boardSize = 0;
-        this.number = 0;
-        this.isOpen = false;
-        this.marks = [];
-
-        this.init(parameters);
-    }
-
-    init (parameters) {
         this.coords = new CellCoords(parameters.coords || '');
-        this.squareNumber = +parameters.squareNumber;
-        this.boardSize = +parameters.boardSize;
-        this.number = +parameters.number;
+        this.squareNumber = parseInt(parameters.squareNumber) || 0; // TODO: check if the first = "1"
+        this.boardSize = parseInt(parameters.boardSize) || 0;
+        this.number = parseInt(parameters.number);
         this.isOpen = !!(parameters.isOpen || false);
         this.marks = parameters.marks || [];
 
-        if (!this.squareNumber || !this.boardSize) {
-            throw new Error('Can\'t initialize Cell. Wrong parameters. Coords: "' + this.coords.toString() + '". Square: "' + this.squareNumber + '". Board size: "' + this.boardSize + '".');
+        if (this.squareNumber <=0 || this.boardSize <= 0 || !this.checkNumber(this.number)) {
+            throw new Error('Can\'t initialize Cell. Wrong parameters. Coords: "' + this.coords.toString() + '".');
         }
     }
 
@@ -45,14 +34,15 @@ class Cell {
 
     setNumber (number) {
         if (this.checkNumber(number)) {
-            this.number = +number;
+            this.number = parseInt(number);
             return true;
         }
         return false;
     }
 
     checkNumber (number) {
-        return !!(0 <= +number && +number <= this.boardSize);
+        number = parseInt(number);
+        return !!(number >= 0 && number <= this.boardSize);
     }
 
     /***************** /NUMBER ***/
@@ -60,9 +50,9 @@ class Cell {
     /***************** MARK ***/
 
     addMark (mark) {
-        if (+mark && this.checkNumber(mark)) {
+        if (this.checkNumber(mark)) {
             if (!this.hasMark(mark)) {
-                this.marks.push(+mark);
+                this.marks.push(parseInt(mark));
             }
             return true;
         }
@@ -86,13 +76,12 @@ class Cell {
     }
 
     removeAllMarks () {
-        var mark;
-        for (mark = 1; mark <= this.boardSize; mark += 1) {
+        for (let mark = 1; mark <= this.boardSize; mark += 1) {
             if (!this.removeMark(mark)) {
                 return false;
             }
         }
-        return this;
+        return true;
     }
 
     setMarks (marks) {
@@ -101,14 +90,14 @@ class Cell {
     }
 
     toggleMark (mark) {
-        if (+mark && this.checkNumber(mark)) {
+        if (this.checkNumber(mark)) {
             return this.hasMark(mark) ? this.removeMark(mark) : this.addMark(mark);
         }
         return false;
     }
 
     hasMark (mark) {
-        return (this.marks.indexOf(+mark) > -1);
+        return (this.marks.indexOf(parseInt(mark)) > -1);
     }
 
     /***************** /MARK ***/

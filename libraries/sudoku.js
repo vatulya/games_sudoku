@@ -155,9 +155,9 @@ class Sudoku {
     }
 
     clearBoard (data, callback) {
-        let action;
-
         this.board.clear((error, oldParameters, newParameters) => {
+            let action;
+
             if (error) { return callback(error); }
 
             action = new SudokuHistoryAction(SudokuHistoryAction.ACTION_TYPE_CLEAR_BOARD, {

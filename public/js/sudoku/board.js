@@ -153,10 +153,8 @@ class SudokuBoard {
     }
 
     fill (board) {
-        let self = this;
-
-        $.each(board.openedCells || {}, function(coords, number) {
-            let Cell = self.findCell(coords);
+        $.each(board.openedCells || {}, (coords, number) => {
+            let Cell = this.findCell(coords);
             Cell.setNumber(number);
             Cell.container.removeClass('open marks').addClass('locked');
         });
@@ -178,14 +176,12 @@ class SudokuBoard {
      * @param boardState
      */
     applyState (boardState) {
-        let self = this;
-
-        $.each(boardState.checkedCells || {}, function(coords, number) {
-            let Cell = self.findCell(coords);
+        $.each(boardState.checkedCells || {}, (coords, number) => {
+            let Cell = this.findCell(coords);
             Cell.setNumber(number);
         });
-        $.each(boardState.markedCells || {}, function(coords, marks) {
-            let Cell = self.findCell(coords);
+        $.each(boardState.markedCells || {}, (coords, marks) => {
+            let Cell = this.findCell(coords);
             Cell.setMarks(marks);
             if (Cell.getMarks() && !Cell.getNumber()) {
                 Cell.container.addClass('marks');
@@ -281,7 +277,7 @@ class SudokuBoard {
     clear () {
         $.each(this.cells, (i, Cell) => {
             if (Cell.isOpen()) {
-                self.setCell(Cell, 0, []);
+                this.setCell(Cell, 0, []);
             }
         });
     }

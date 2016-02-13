@@ -1,6 +1,6 @@
 'use strict';
 
-let Array = require('./../../../helpers/array'),
+let array = require('./../../../helpers/array'),
 
     Cell = require('./../cell'),
     CellCoords = require('./../cell/coords'),
@@ -57,12 +57,12 @@ class BoardState {
                     marks: []
                 };
 
-                if (openedCells.hasOwnProperty(key) && +openedCells[key] && this.checkNumber(openedCells[key])) {
+                if (openedCells.hasOwnProperty(key) && parseInt(openedCells[key]) > 0) { // TODO: check it
                     cellParameters.isOpen = true;
                     cellParameters.number = openedCells[key];
                 } else {
                     // Cell can't be open and checked. Cell can't be open and marked
-                    if (checkedCells.hasOwnProperty(key) && +checkedCells[key] && this.checkNumber(checkedCells[key])) {
+                    if (checkedCells.hasOwnProperty(key)) {
                         cellParameters.number = checkedCells[key];
                     }
                     if (markedCells.hasOwnProperty(key)) {
@@ -146,7 +146,7 @@ class BoardState {
             if (oldCell.number !== newCell.number) {
                 diff.checkedCells[coords] = newCell.number;
             }
-            if (Array.isDifferent(oldCell.marks, newCell.marks)) {
+            if (array.isDifferent(oldCell.marks, newCell.marks)) {
                 diff.markedCells[coords] = newCell.marks;
             }
         }
@@ -211,7 +211,7 @@ class BoardState {
 
         Object.keys(this.cells).forEach((key) => {
             cell = this.cells[key];
-            number = +cell.number;
+            number = cell.number;
             if (cell.isOpen) {
                 hash.openedCells[key] = number;
             } else {
@@ -230,10 +230,6 @@ class BoardState {
 
     copy () {
         return new BoardState(this.toHash());
-    }
-
-    checkNumber (number) {
-        return !!(0 <= +number && +number <= this.size);
     }
 
 }
