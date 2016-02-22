@@ -26,12 +26,20 @@ class History {
         return this.storage.getId();
     }
 
-    addAction (action, callback) {
-        if (!(action instanceof HistoryAction)) {
-            return callback (new Error('Sudoku history error. Can\'t add action. Wrong type.'));
-        }
+    addAction (action) {
+        return new Promise((fulfill, reject) => {
+            if (!(action instanceof HistoryAction)) {
+                return reject(new Error('Sudoku history error. Can\'t add action. Wrong type.'));
+            }
 
-        this.storage.saveAction(action, callback);
+            return this.storage.saveAction(action)
+                .then(() => {
+                    return fulfill();
+                })
+                .catch((error) => {
+                    return reject(error);
+                });
+        });
     }
 
     getUndo () {
@@ -46,23 +54,31 @@ class History {
 
     /********************************************** STATIC METHODS ***/
 
-    static create (gameHash, callback) {
-        let storage = new (HistoryStorage(HistoryStorage.ADAPTER_MONGOOSE))(gameHash, {model: ModelSudokuHistoryAction});
+    static create (gameHash) {
+        return new Promise((fulfill, reject) => {
+            let storage = new (HistoryStorage(HistoryStorage.ADAPTER_MONGOOSE))(gameHash, {model: ModelSudokuHistoryAction});
 
-        storage.init((error) => {
-            if (error) { return callback(error); }
-
-            callback(null, new History(storage));
+            storage.init()
+                .then(() => {
+                    return fulfill(new History(storage));
+                })
+                .catch((error) => {
+                    return reject(error);
+                });
         });
     }
 
-    static load (gameHash, callback) {
-        let storage = new (HistoryStorage(HistoryStorage.ADAPTER_MONGOOSE))(gameHash, {model: ModelSudokuHistoryAction});
+    static load (gameHash) {
+        return new Promise(function (fulfill, reject) {
+            let storage = new (HistoryStorage(HistoryStorage.ADAPTER_MONGOOSE))(gameHash, {model: ModelSudokuHistoryAction});
 
-        storage.init((error) => {
-            if (error) { return callback(error); }
-
-            callback(null, new History(storage));
+            storage.init()
+                .then(function () {
+                    return fulfill(new History(storage), 'test2');
+                })
+                .catch((error) => {
+                    return reject(error);
+                });
         });
     }
 

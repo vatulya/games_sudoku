@@ -1,6 +1,8 @@
 'use strict';
 
-let ModelSudoku = require('./../models/sudoku'),
+let Promise = require('promise'),
+
+    ModelSudoku = require('./../models/sudoku'),
     SudokuBoard = require('./sudoku/board'),
     SudokuBoardGeneratorSimple = require('./sudoku/board/generator/simple'),
     SudokuHistory = require('./sudoku/history'),
@@ -12,70 +14,80 @@ class Sudoku {
 
     /********************************************** STATIC METHODS ***/
 
-    static load (hash, callback, refresh) {
+    static load (hash, refresh) {
+        return new Promise((fulfill, reject) => {
+            if (refresh && SudokuGames[hash]) {
+                console.log('Remove game "' + hash + '" from cache. Cache contains "' + Object.keys(SudokuGames).length + '" games');
+                delete SudokuGames[hash];
+            }
 
-        if (refresh && SudokuGames[hash]) {
-            console.log('Remove game "' + hash + '" from cache. Cache contains "' + Object.keys(SudokuGames).length + '" games');
-            delete SudokuGames[hash];
-        }
+            if (SudokuGames[hash]) {
+                console.log('Game loaded from cache. Cache contains "' + Object.keys(SudokuGames).length + '" games');
+                return fulfill(SudokuGames[hash]);
+            }
 
-        if (SudokuGames[hash]) {
-            console.log('Game loaded from cache. Cache contains "' + Object.keys(SudokuGames).length + '" games');
-            callback(null, SudokuGames[hash]);
-            return;
-        }
+            ModelSudoku.findOneByHash(hash, (error, modelSudoku) => {
+                if (error) {
+                    return reject(error);
+                }
+                if (!modelSudoku) {
+                    return reject(new Error('Wrong hash'));
+                }
 
-        ModelSudoku.findOneByHash(hash, (error, modelSudoku) => {
-            if (error) { return callback(error); }
-            if (!modelSudoku) { return callback(new Error('Wrong hash')); }
+                Promise.all([
+                        SudokuBoard.load(modelSudoku.get('boardId')),
+                        SudokuHistory.load(hash)
+                    ])
+                    .then((results) => {
+                        let sudokuBoard = results[0],
+                            sudokuHistory = results[1];
 
-            SudokuBoard.load(modelSudoku.get('boardId'), (error, sudokuBoard) => {
-                if (error) { return callback(error); }
-
-                SudokuHistory.load(hash, (error, sudokuHistory) => {
-                    if (error) { return callback(error); }
-                    if (!modelSudoku) { return callback(new Error('Wrong board ID')); }
-
-                    SudokuGames[hash] = new Sudoku(modelSudoku, {board: sudokuBoard, history: sudokuHistory});
-                    callback(null, SudokuGames[hash]);
-                });
+                        SudokuGames[hash] = new Sudoku(modelSudoku, {board: sudokuBoard, history: sudokuHistory});
+                        return fulfill(SudokuGames[hash]);
+                    })
+                    .catch((error) => {
+                        return reject(error);
+                    });
             });
         });
     }
 
-    static create (hash, callback) {
-        let sudoku,
-            modelSudoku,
-            generator;
+    static create (hash) {
+        return new Promise((fulfill, reject) => {
+            let sudoku,
+                modelSudoku,
+                generator;
 
-        if (typeof hash !== 'string' || !hash) {
-            return callback(new Error('Wrong hash'));
-        }
+            if (typeof hash !== 'string' || !hash) {
+                return reject(new Error('Wrong hash'));
+            }
 
-        modelSudoku = new ModelSudoku();
-        modelSudoku.set('hash', hash);
+            modelSudoku = new ModelSudoku();
+            modelSudoku.set('hash', hash);
 
-        sudoku = new Sudoku(modelSudoku);
+            sudoku = new Sudoku(modelSudoku);
 
-        generator = new SudokuBoardGeneratorSimple();
-        generator.generate(9, (error, parameters) => {
-            if (error) { return callback(error); }
-
-            SudokuBoard.create(parameters, (error, sudokuBoard) => {
-                if (error) { return callback(error); }
-
-                modelSudoku.set('boardId', sudokuBoard.getId());
-
-                SudokuHistory.create(hash, (error) => {
-                    if (error) { return callback(error); }
-
+            generator = new SudokuBoardGeneratorSimple();
+            generator.generate(9)
+                .then((parameters) => {
+                    return SudokuBoard.create(parameters);
+                })
+                .then((sudokuBoard) => {
+                    modelSudoku.set('boardId', sudokuBoard.getId());
+                    return SudokuHistory.create(hash);
+                })
+                .then((sudokuHistory) => {
                     modelSudoku.save((error) => {
-                        if (error) { return callback(error); }
+                        if (error) {
+                            return reject(error);
+                        }
 
-                        callback(null, sudoku);
+                        return fulfill(sudoku);
                     });
+                })
+                .catch((error) => {
+                    return reject(error);
                 });
-            });
         });
     }
 
@@ -132,87 +144,121 @@ class Sudoku {
         return changes;
     }
 
-    setCells (data, callback) {
-        let changes = {
+    setCells (data) {
+        return new Promise((fulfill, reject) => {
+            let changes = {
                 checkedCells: data.checkedCells,
                 markedCells: data.markedCells
-            },
-            action;
+            };
 
-        if (!Object.keys(changes.checkedCells).length && !Object.keys(changes.markedCells).length) {
-            callback(new Error('Saving data error'));
-        }
+            if (!Object.keys(changes.checkedCells).length && !Object.keys(changes.markedCells).length) {
+                return reject(new Error('Saving data error'));
+            }
 
-        this.board.apply(changes, (error, oldParameters, newParameters) => {
-            if (error) { return callback(error); }
+            return this.board.apply(changes)
+                .then((oldParameters, newParameters) => {
+                    let action = new SudokuHistoryAction(SudokuHistoryAction.ACTION_TYPE_SET_CELLS, {
+                        oldParameters: oldParameters,
+                        newParameters: newParameters
+                    });
 
-            action = new SudokuHistoryAction(SudokuHistoryAction.ACTION_TYPE_SET_CELLS, {
-                oldParameters: oldParameters,
-                newParameters: newParameters
-            });
-            this.history.addAction(action, callback);
+                    return this.history.addAction(action);
+                })
+                .then(() => {
+                    return fulfill(this);
+                })
+                .catch((error) => {
+                    return reject(error);
+                });
         });
     }
 
-    clearBoard (data, callback) {
-        this.board.clear((error, oldParameters, newParameters) => {
-            let action;
+    clearBoard (data) {
+        return new Promise((fulfill, reject) => {
+            return this.board.clear()
+                .then((oldParameters, newParameters) => {
+                    let action = new SudokuHistoryAction(SudokuHistoryAction.ACTION_TYPE_CLEAR_BOARD, {
+                        oldParameters: oldParameters,
+                        newParameters: newParameters
+                    });
 
-            if (error) { return callback(error); }
-
-            action = new SudokuHistoryAction(SudokuHistoryAction.ACTION_TYPE_CLEAR_BOARD, {
-                oldParameters: oldParameters,
-                newParameters: newParameters
-            });
-            this.history.addAction(action, callback);
+                    return this.history.addAction(action);
+                })
+                .then(() => {
+                    return fulfill(this);
+                })
+                .catch((error) => {
+                    return reject(error);
+                });
         });
     }
 
-    undoMove (data, callback) {
-        this._useHistory('undo', callback);
+    undoMove (data) {
+        return new Promise((fulfill, reject) => {
+            return this._useHistory('undo')
+                .then(() => {
+                    return fulfill(this);
+                })
+                .catch((error) => {
+                    return reject(error);
+                });
+        });
     }
 
 
-    redoMove (data, callback) {
-        this._useHistory('redo', callback);
+    redoMove (data) {
+        return new Promise((fulfill, reject) => {
+            return this._useHistory('redo')
+                .then(() => {
+                    return fulfill(this);
+                }).catch((error) => {
+                    return reject(error);
+                });
+        });
     }
 
-    _useHistory (type, callback) {
-        let method,
-            actionType,
-            changes,
-            action;
+    _useHistory (type) {
+        return new Promise((fulfill, reject) => {
+            let method,
+                actionType,
+                changes;
 
-        switch (type) {
-            case 'undo':
-                method = 'getUndo';
-                actionType = SudokuHistoryAction.ACTION_TYPE_UNDO;
-                break;
+            switch (type) {
+                case 'undo':
+                    method = 'getUndo';
+                    actionType = SudokuHistoryAction.ACTION_TYPE_UNDO;
+                    break;
 
-            case 'redo':
-                method = 'getRedo';
-                actionType = SudokuHistoryAction.ACTION_TYPE_REDO;
-                break;
+                case 'redo':
+                    method = 'getRedo';
+                    actionType = SudokuHistoryAction.ACTION_TYPE_REDO;
+                    break;
 
-            default:
-                return callback (new Error('Can\'t use Sudoku history. Wrong type "' + type + '"'));
+                default:
+                    return reject(new Error('Can\'t use Sudoku history. Wrong type "' + type + '"'));
                 //break;
-        }
+            }
 
-        changes = this[method]();
+            changes = this[method]();
 
-        if (!Object.keys(changes.checkedCells).length && !Object.keys(changes.markedCells).length) {
-            callback(new Error('Nothing to ' + type));
-        }
+            if (!Object.keys(changes.checkedCells).length && !Object.keys(changes.markedCells).length) {
+                return reject(new Error('Nothing to ' + type));
+            }
 
-        this.board.apply(changes, (error, oldParameters, newParameters) => {
-            if (error) { return callback(error); }
+            return this.board.apply(changes)
+                .then((oldParameters, newParameters) => {
+                    let action = new SudokuHistoryAction(actionType, {
+                        oldParameters: oldParameters,
+                        newParameters: newParameters
+                    });
 
-            action = new SudokuHistoryAction(actionType, {
-                oldParameters: oldParameters,
-                newParameters: newParameters
-            });
-            this.history.addAction(action, callback);
+                    return this.history.addAction(action)
+                        .then(fulfill)
+                        .catch(reject);
+                })
+                .catch((error) => {
+                    return reject(error);
+                });
         });
     }
 

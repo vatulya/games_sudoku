@@ -15,93 +15,102 @@ module.exports = (socket) => {
         let params = {
             application: 'sudoku'
         };
-        api.get('/sudoku/games/create', params).then(function (response) {
-            data = {
-                hash: response.hash,
-                size: 9 // TODO: get this parameter from user side
-            };
-            Sudoku.create(data.hash, (error, sudoku) => {
-                if (error) { return forceRefresh(socket, error); }
 
-                let url = '/game/' + sudoku.getHash();
-                socket.emit('game:created', {url: url});
+        api.get('/sudoku/games/create', params)
+            .then((response) => {
+                let data = {
+                    hash: response.hash,
+                    size: 9 // TODO: get this parameter from user side
+                };
+                return Sudoku.create(data.hash);
+            })
+            .then((sudoku) => {
+                let response = {
+                    url: '/game/' + sudoku.getHash()
+                };
+                socket.emit('game:created', response);
+            })
+            .catch((error) => {
+                return forceRefresh(socket, error);
             });
-
-        }).catch(function (error) {
-            forceRefresh(socket, error);
-        });
     });
 
     socket.on('loadBoard', (data) => {
         console.log('WS: call "loadBoard"');
 
-        Sudoku.load(data._game_hash, (error, sudoku) => {
-            if (error) { return forceRefresh(socket, error); }
-
-            let response = extend(sudoku.board.toHash(), sudoku.getSystemData());
-            socket.emit('loadBoard', response);
-        });
+        Sudoku.load(data._game_hash)
+            .then((sudoku) => {
+                let response = extend(sudoku.board.toHash(), sudoku.getSystemData());
+                socket.emit('loadBoard', response);
+            })
+            .catch((error) => {
+                return forceRefresh(socket, error);
+            });
     });
 
     socket.on('setCell', (data) => {
         console.log('WS: call "setCell"');
 
-        Sudoku.load(data._game_hash, (error, sudoku) => {
-            if (error) { return forceRefresh(socket, error); }
-
-            sudoku.setCells(data, (error) => {
-                if (error) { return forceRefresh(socket, error); }
-
+        Sudoku.load(data._game_hash)
+            .then((sudoku) => {
+                return sudoku.setCells(data);
+            })
+            .then((sudoku) => {
                 let response = extend(sudoku.board.toHash(), sudoku.getSystemData());
                 socket.emit('systemData', response);
+            })
+            .catch((error) => {
+                return forceRefresh(socket, error);
             });
-        });
     });
 
     socket.on('clearBoard', (data) => {
         console.log('WS: call "clearBoard"');
 
-        Sudoku.load(data._game_hash, (error, sudoku) => {
-            if (error) { return forceRefresh(socket, error); }
-            sudoku.clearBoard(data, (error) => {
-                if (error) { return forceRefresh(socket, error); }
-
+        Sudoku.load(data._game_hash)
+            .then((sudoku) => {
+                return sudoku.clearBoard(data);
+            })
+            .then((sudoku) => {
                 let response = extend(sudoku.board.toHash(), sudoku.getSystemData());
                 socket.emit('systemData', response);
-            }, true);
-        });
+            })
+            .catch((error) => {
+                return forceRefresh(socket, error);
+            });
     });
 
     socket.on('undoMove', (data) => {
         console.log('WS: call "undoMove"');
 
-        Sudoku.load(data._game_hash, (error, sudoku) => {
-            if (error) { return forceRefresh(socket, error); }
-
-            sudoku.undoMove(data, function (error) {
-                if (error) { return forceRefresh(socket, error); }
-
+        Sudoku.load(data._game_hash)
+            .then((sudoku) => {
+                return sudoku.undoMove(data);
+            })
+            .then((sudoku) => {
                 let response = extend(sudoku.board.toHash(), sudoku.getSystemData());
                 socket.emit('systemData', response);
+            })
+            .catch((error) => {
+                return forceRefresh(socket, error);
             });
-        });
     });
 
     socket.on('redoMove', (data) => {
         console.log('WS: call "redoMove"');
 
-        Sudoku.load(data._game_hash, (error, sudoku) => {
-            if (error) { return forceRefresh(socket, error); }
-
-            sudoku.redoMove(data, (error) => {
-                if (error) { return forceRefresh(socket, error); }
-
+        Sudoku.load(data._game_hash)
+            .then((sudoku) => {
+                return sudoku.redoMove(data);
+            })
+            .then((sudoku) =>{
                 let response = extend(sudoku.board.toHash(), sudoku.getSystemData());
                 socket.emit('systemData', response);
+            })
+            .catch((error) => {
+                return forceRefresh(socket, error);
             });
-        });
     });
-
 };
 
 function forceRefresh(socket, error) {

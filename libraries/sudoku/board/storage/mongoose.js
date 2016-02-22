@@ -17,18 +17,21 @@ class BoardStorageMongoose extends BoardStorageAbstract {
         return this.model.get(parameter);
     }
 
-    save(parameters, callback) {
-        let self = this,
-            allKeys = Object.keys(parameters);
+    save(parameters) {
+        return new Promise((fulfill, reject) => {
+            let allKeys = Object.keys(parameters);
 
-        allKeys.forEach((key) => {
-            self.model.set(key, parameters[key]);
-        });
+            allKeys.forEach((key) => {
+                this.model.set(key, parameters[key]);
+            });
 
-        self.model.save((error) => {
-            if (error) { return callback(error); }
+            return this.model.save((error) => {
+                if (error) {
+                    return reject(error);
+                }
 
-            callback(error);
+                return fulfill();
+            });
         });
     }
 

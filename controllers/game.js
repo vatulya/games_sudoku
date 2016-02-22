@@ -11,13 +11,16 @@ router.get('/', (req, res, next) => {
 });
 
 router.get('/:gameHash', (req, res, next) => {
-    Sudoku.load(req.params.gameHash, (error, sudoku) => {
-        if (error) { return next(error); }
-        res.render('game/game', {
-            'title': 'Sudoku',
-            'gameSudoku': sudoku
+    Sudoku.load(req.params.gameHash, true)
+        .then((sudoku) => {
+            return res.render('game/game', {
+                'title': 'Sudoku',
+                'gameSudoku': sudoku
+            });
+        })
+        .catch((error) => {
+            return next(error);
         });
-    }, true);
 });
 
 module.exports = router;

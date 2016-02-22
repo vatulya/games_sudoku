@@ -11,84 +11,89 @@ class HistoryStorageMemory extends HistoryStorageAbstract {
         this.actions = [];
     }
 
-    _init (callback) {
-        this.actions = [];
-        callback(null);
+    _init () {
+        return new Promise((fulfill, reject) => {
+            this.actions = [];
+            return fulfill();
+        });
     }
 
-    _save (action, callback) {
-        this.actions.push(action);
-        callback(null);
+    _save (action) {
+        return new Promise((fulfill, reject) => {
+            this.actions.push(action);
+            return fulfill();
+        });
     }
 
-    _calcRedoUndo (callback) {
-        let self = this,
-            revertedActions = self.actions.slice().reverse(), // copy array and reverse
-            undoCount = 0,
-            redoCount = 0;
+    _calcRedoUndo () {
+        return new Promise((fulfill, reject) => {
+            let revertedActions = this.actions.slice().reverse(), // copy array and reverse
+                undoCount = 0,
+                redoCount = 0;
 
-        self.undo = {};
-        self.redo = {};
+            this.undo = {};
+            this.redo = {};
 
-        if (!revertedActions.every(function (action) { return (action instanceof HistoryAction); })) {
-            return callback(new Error('History action error. Wrong action type.'));
-        }
+            if (!revertedActions.every((action) => { return (action instanceof HistoryAction); })) {
+                return reject(new Error('History action error. Wrong action type.'));
+            }
 
-        revertedActions.every(function (action) {
-            let continueLoop = true; // you can change this var if you need break the loop. Example: Reach history limit.
+            revertedActions.every((action) => {
+                let continueLoop = true; // you can change this var if you need break the loop. Example: Reach history limit.
 
-            switch (action.type) {
-                case HistoryAction.ACTION_TYPE_SET_CELLS:
-                case HistoryAction.ACTION_TYPE_CLEAR_BOARD:
-                    if (Object.keys(self.undo).length) {
-                        continueLoop = false;
-                    } else {
+                switch (action.type) {
+                    case HistoryAction.ACTION_TYPE_SET_CELLS:
+                    case HistoryAction.ACTION_TYPE_CLEAR_BOARD:
+                        if (Object.keys(this.undo).length) {
+                            continueLoop = false;
+                        } else {
+                            if (undoCount > 0) {
+                                undoCount--;
+                            } else {
+                                if (!Object.keys(this.undo).length) {
+                                    this.undo = action;
+                                }
+                            }
+                        }
+                        break;
+
+                    case HistoryAction.ACTION_TYPE_UNDO:
+                        undoCount++;
+                        if (redoCount > 0) {
+                            redoCount--;
+                        } else {
+                            if (!Object.keys(this.redo).length) {
+                                this.redo = action;
+                            }
+                        }
+                        break;
+
+                    case HistoryAction.ACTION_TYPE_REDO:
+                        redoCount++;
                         if (undoCount > 0) {
                             undoCount--;
                         } else {
-                            if (!Object.keys(self.undo).length) {
-                                self.undo = action;
+                            if (!Object.keys(this.undo).length) {
+                                this.undo = action;
                             }
                         }
-                    }
-                    break;
+                        break;
 
-                case HistoryAction.ACTION_TYPE_UNDO:
-                    undoCount++;
-                    if (redoCount > 0) {
-                        redoCount--;
-                    } else {
-                        if (!Object.keys(self.redo).length) {
-                            self.redo = action;
-                        }
-                    }
-                    break;
+                    default:
+                        // Unknown type. Ignore.
+                        console.log('Unknown history action type: "' + action.type + '"');
+                        break;
+                }
 
-                case HistoryAction.ACTION_TYPE_REDO:
-                    redoCount++;
-                    if (undoCount > 0) {
-                        undoCount--;
-                    } else {
-                        if (!Object.keys(self.undo).length) {
-                            self.undo = action;
-                        }
-                    }
-                    break;
+                if (Object.keys(this.undo).length && Object.keys(this.redo).length) {
+                    continueLoop = false;
+                }
 
-                default:
-                    // Unknown type. Ignore.
-                    console.log('Unknown history action type: "' + action.type + '"');
-                    break;
-            }
+                return continueLoop;
+            });
 
-            if (Object.keys(self.undo).length && Object.keys(self.redo).length) {
-                continueLoop = false;
-            }
-
-            return continueLoop;
+            return fulfill();
         });
-
-        callback(null);
     }
 
 }

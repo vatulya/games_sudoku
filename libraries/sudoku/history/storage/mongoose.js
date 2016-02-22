@@ -11,39 +11,48 @@ class HistoryStorageMongoose extends HistoryStorageMemory {
         return super._setParameters(parameters);
     }
 
-    _init (callback) {
-        let self = this;
+    _init () {
+        return new Promise((fulfill, reject) => {
+            this.actions = [];
 
-        self.actions = [];
+            //this.model.findByGameHash(this.gameHash, function (error, actionsRows) {
+            this.model.find({gameHash: this.gameHash}, (error, actionsRows) => {
+                if (error) {
+                    return reject(error);
+                }
 
-        //this.model.findByGameHash(this.gameHash, function (error, actionsRows) {
-        this.model.find({gameHash: this.gameHash}, (error, actionsRows) => {
-            if (error) { return callback(error); }
+                actionsRows.forEach((row) => {
+                    this.actions.push(new HistoryAction(row.actionType, {
+                        oldParameters: row.oldParameters,
+                        newParameters: row.newParameters
+                    }));
+                });
 
-            actionsRows.forEach((row) => {
-                self.actions.push(new HistoryAction(row.actionType, {
-                    oldParameters: row.oldParameters,
-                    newParameters: row.newParameters
-                }));
+                return fulfill();
             });
-
-            callback(null);
         });
     }
 
-    _save (action, callback) {
-        let storageAction = new this.model({
-            gameHash: this.gameHash,
-            created: new Date().getTime(),
-            actionType: action.type,
-            oldParameters: action.parameters.oldParameters,
-            newParameters: action.parameters.newParameters
-        });
+    _save (action) {
+        return new Promise((fulfill, reject) => {
+            let parameters = {
+                    gameHash: this.gameHash,
+                    created: new Date().getTime(),
+                    actionType: action.type,
+                    oldParameters: action.parameters.oldParameters,
+                    newParameters: action.parameters.newParameters
+                },
+                storageAction = new this.model(parameters);
 
-        storageAction.save((error) => {
-            if (error) return callback(error);
+            storageAction.save((error) => {
+                if (error) {
+                    return reject(error);
+                }
 
-            return super._save(action, callback);
+                return super._save(action)
+                    .then(fulfill)
+                    .catch(reject);
+            });
         });
     }
 

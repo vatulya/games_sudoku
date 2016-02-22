@@ -18,9 +18,11 @@ class BoardStorageMemory extends BoardStorageAbstract {
         return this.hash[parameter];
     }
 
-    save(parameters, callback) {
-        extend(this.hash, parameters);
-        callback(null);
+    save(parameters) {
+        return new Promise((fulfill, reject) => {
+            extend(this.hash, parameters);
+            return fulfill();
+        });
     }
 
 }

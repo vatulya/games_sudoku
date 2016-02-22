@@ -16,8 +16,10 @@ class BoardStorageAbstract {
         return null;
     }
 
-    save(parameters, callback) {
-        callback(null);
+    save(parameters) {
+        return new Promise((fulfill, reject) => {
+            return fulfill();
+        });
     }
 
 }

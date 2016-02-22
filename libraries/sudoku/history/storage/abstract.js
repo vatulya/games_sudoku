@@ -20,65 +20,73 @@ class HistoryStorageAbstract {
         // here you can set some additional parameters
     }
 
-    init (callback, force) {
-        let self = this;
+    init (force) {
+        return new Promise((fulfill, reject) => {
+            if (!this.initialized || force) {
+                console.log('History storage: init start (gameHash: "' + this.getGameHash() + '")' + (force ? ' FORCE' : ''));
 
-        if (!this.initialized || force) {
-            console.log('History storage: init start (gameHash: "' + this.getGameHash() + '")' + (force ? ' FORCE' : ''));
+                this.undo = {};
+                this.redo = {};
 
-            self.undo = {};
-            self.redo = {};
+                return this._init()
+                    .then(() => {
+                        return this._calcRedoUndo();
+                    })
+                    .then(() => {
+                        this.initialized = true;
 
-            this._init(function (error) {
-                if (error) return callback (error);
-
-                self._calcRedoUndo(function (error) {
-                    if (error) return callback (error);
-
-                    self.initialized = true;
-
-                    callback(null);
-                });
-            });
-        } else {
-            callback(null);
-        }
-    }
-
-    _init (callback) {
-        // overwrite this method
-        // here you can load history for long term storage
-        callback(new Error('AbstractStorage method error'));
-    }
-
-    saveAction (action, callback) {
-        let self = this;
-
-        if (!(action instanceof HistoryAction)) {
-            return callback(new Error('Save history action error. Wrong Action object'));
-        }
-
-        this._save(action, function (error) {
-            if (error) return callback(error);
-
-            self._calcRedoUndo(function (error) {
-                if (error) return callback (error);
-
-                callback(null);
-            });
+                        return fulfill();
+                    })
+                    .catch((error) => {
+                        return reject(error);
+                    });
+            } else {
+                return fulfill();
+            }
         });
     }
 
-    _save (action, callback) {
+    _init () {
         // overwrite this method
-        // here you can save action into long term storage
-        callback(new Error('AbstractStorage method error'));
+        // here you can load history for a long term storage
+        return new Promise((fulfill, reject) => {
+           return reject(new Error('AbstractStorage method error'));
+        });
     }
 
-    _calcRedoUndo (callback) {
+    saveAction (action) {
+        return new Promise((fulfill, reject) => {
+            if (!(action instanceof HistoryAction)) {
+                return reject(new Error('Save history action error. Wrong Action object'));
+            }
+
+            return this._save(action)
+                .then(() => {
+                    return this._calcRedoUndo();
+                })
+                .then(() => {
+                    return fulfill();
+                })
+                .catch((error) => {
+                    return reject(error);
+                });
+        });
+    }
+
+    _save (action) {
+        // overwrite this method
+        // here you can save action into long term storage
+        return new Promise((fulfill, reject) => {
+            return reject(new Error('AbstractStorage method error'));
+        });
+    }
+
+    _calcRedoUndo () {
         // overwrite this method
         // here you can implement logic to calculate undo-redo moved and fill this.undo
-        callback(new Error('AbstractStorage method error'));
+        return new Promise((fulfill, reject) => {
+            return reject(new Error('AbstractStorage method error'));
+        });
     }
 
     getGameHash () {
@@ -86,12 +94,18 @@ class HistoryStorageAbstract {
     }
 
     getUndoAction () {
-        if (!this.initialized) throw new Error('History initialization error');
+        if (!this.initialized) {
+            throw new Error('History initialization error');
+        }
+
         return this.undo || {};
     }
 
     getRedoAction () {
-        if (!this.initialized) throw new Error('History initialization error');
+        if (!this.initialized) {
+            throw new Error('History initialization error');
+        }
+
         return this.redo || {};
     }
 

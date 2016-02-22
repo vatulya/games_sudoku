@@ -12,29 +12,37 @@ class SudokuBoard {
 
     /********************************************** STATIC METHODS ***/
 
-    static create (parameters, callback) {
-        let storage;
+    static create (parameters) {
+        return new Promise((fulfill, reject) => {
+            let storage = new (BoardStorage(BoardStorage.ADAPTER_MONGOOSE))(new ModelSudokuBoard());
 
-        storage = new (BoardStorage(BoardStorage.ADAPTER_MONGOOSE))(new ModelSudokuBoard());
-        storage.save(parameters, (error) => {
-            if (error) { return callback(error); }
-
-            callback(null, new SudokuBoard(storage));
+            return storage.save(parameters)
+                .then(() => {
+                    return fulfill(new SudokuBoard(storage));
+                }).catch((error) => {
+                    return reject(error);
+                });
         });
     }
 
-    static load (id, callback) {
-        let storage,
-            board;
+    static load (id) {
+        return new Promise((fulfill, reject) => {
+            ModelSudokuBoard.findById(id, (error, model) => {
+                let storage,
+                    board;
 
-        ModelSudokuBoard.findById(id, (error, model) => {
-            if (error) { return callback(error); }
-            if (!model) { return callback(new Error('Wrong board ID')); }
+                if (error) {
+                    return reject(error);
+                }
+                if (!model) {
+                    return reject(new Error('Wrong board ID'));
+                }
 
-            storage = new (BoardStorage(BoardStorage.ADAPTER_MONGOOSE))(model);
-            board = new SudokuBoard(storage);
+                storage = new (BoardStorage(BoardStorage.ADAPTER_MONGOOSE))(model);
+                board = new SudokuBoard(storage);
 
-            callback(null, board);
+                return fulfill(board, 'test');
+            });
         });
     }
 
@@ -62,29 +70,37 @@ class SudokuBoard {
         return this.state.getCellByCoords(row, col);
     }
 
-    apply (changes, callback) {
-        let oldState = this.state.copy();
+    apply (changes) {
+        return new Promise((fulfill, reject) => {
+            let oldState = this.state.copy();
 
-        if (!this.state.apply(changes.checkedCells || {}, changes.markedCells || {})) {
-            callback(new Error('Board error. Can\'t apply changes.'));
-        }
+            if (!this.state.apply(changes.checkedCells || {}, changes.markedCells || {})) {
+                return reject(new Error('Board error. Can\'t apply changes.'));
+            }
 
-        this._save((error) => {
-            if (error) { return callback(error); }
-
-            callback(null, oldState.toHash(), this.state.toHash());
+            return this._save()
+                .then(() => {
+                    return fulfill(oldState.toHash(), this.state.toHash());
+                })
+                .catch((error) => {
+                    return reject(error);
+                });
         });
     }
 
-    clear (callback) {
-        let oldState = this.state.copy();
+    clear () {
+        return new Promise((fulfill, reject) => {
+            let oldState = this.state.copy();
 
-        this.state.clear();
+            this.state.clear();
 
-        this._save((error) => {
-            if (error) { return callback(error); }
-
-            callback(null, oldState.toHash(), this.state.toHash());
+            return this._save()
+                .then(() => {
+                    return fulfill(oldState.toHash(), this.state.toHash());
+                })
+                .catch((error) => {
+                    return reject(error);
+                });
         });
     }
 
@@ -183,14 +199,22 @@ class SudokuBoard {
     //    return keys.every(isCorrect);
     //}
 
-    _save (callback) {
-        let hash = this.toHash(),
-            parameters = {
-                checkedCells: hash.checkedCells,
-                markedCells: hash.markedCells
-            };
+    _save () {
+        return new Promise((fulfill, reject) => {
+            let hash = this.toHash(),
+                parameters = {
+                    checkedCells: hash.checkedCells,
+                    markedCells: hash.markedCells
+                };
 
-        this.storage.save(parameters, callback);
+            return this.storage.save(parameters)
+                .then(() => {
+                    return fulfill();
+                })
+                .catch((error) => {
+                    return reject(error);
+                });
+        });
     }
 
     /********************************************** /PROTECTED METHODS ***/

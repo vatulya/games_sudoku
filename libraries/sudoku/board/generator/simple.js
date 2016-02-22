@@ -9,62 +9,62 @@ let extend = require('util')._extend,
 class BoardGeneratorSimple {
 
     constructor () {
-        // nothing
+        this.iterationsAmount = 20;
     }
 
-    generate (size, callback) {
-        let parameters = {};
+    generate (size) {
+        return new Promise((fulfill, reject) => {
 
-        if (sizeMap.allowedSizes.indexOf(size) == -1) {
-            return callback(new Error('Board size "' + size + '" is not allowed'));
-        }
+            if (sizeMap.allowedSizes.indexOf(size) === -1) {
+                return reject(new Error('Board size "' + size + '" is not allowed'));
+            }
 
-        this.generateSimpleBoard(size, (error, board, squares) => {
-            if (error) { return callback(error); }
+            return this.generateSimpleBoard(size)
+                .then((board, squares) => {
+                    let parameters;
 
-            this.shuffleBoard(board, (error, board) => {
-                if (error) { return callback(error); }
-
-                this.mergeBoardRows(board, (error, board) => {
-                    if (error) { return callback(error); }
-
+                    board = this.shuffleBoard(board);
+                    board = this.mergeBoardRows(board);
                     parameters = this.convertSimpleBoardHashToParameters(board, squares);
-                    this.hideCells(parameters.openedCells, 15);/* parameters.difficulty.getHiddenCellsCount() */
+                    parameters.openedCells = this.hideCells(parameters.openedCells, 15);/* parameters.difficulty.getHiddenCellsCount() */
 
-                    callback(null, parameters);
+                    return fulfill(parameters);
+                })
+                .catch((error) => {
+                    return reject(error);
                 });
-            });
         });
     }
 
-    generateSimpleBoard (size, callback) {
-        let board = [],
-            rowArray,
-            squares = {},
-            coords;
+    generateSimpleBoard (size) {
+        return new Promise((fulfill, reject) => {
+            let board = [],
+                rowArray,
+                squares = {},
+                coords;
 
-        if (sizeMap.allowedSizes.indexOf(size) == -1) {
-            return callback(new Error('Board size "' + size + '" is not allowed'));
-        }
-
-        rowArray = Array.apply(null, new Array(size)).map((_, i) => { return i + 1; });
-        for (let i = 0; i < size; i++) {
-            board.push(this.doOffset(rowArray, this.countOffset(i, size)));
-        }
-
-        for (let row = 0; row < size; row++) {
-            for (let col = 0; col < size; col++) {
-                coords = new Coords(row + 1, col + 1);
-                squares[coords.toString()] = sizeMap.map[size].map[row][col];
+            if (sizeMap.allowedSizes.indexOf(size) === -1) {
+                return reject(new Error('Board size "' + size + '" is not allowed'));
             }
-        }
 
-        callback(null, board, squares);
+            rowArray = Array.apply(null, new Array(size)).map((_, i) => { return i + 1; });
+            for (let i = 0; i < size; i++) {
+                board.push(this.doOffset(rowArray, this.countOffset(i, size)));
+            }
+
+            for (let row = 0; row < size; row++) {
+                for (let col = 0; col < size; col++) {
+                    coords = new Coords(row + 1, col + 1);
+                    squares[coords.toString()] = sizeMap.map[size].map[row][col];
+                }
+            }
+
+            return fulfill(board, squares);
+        });
     }
 
-    shuffleBoard (board, callback) {
-        let iterations = 20,
-            possibleMethods = [
+    shuffleBoard (board) {
+        let possibleMethods = [
                 'Transposing',
                 'SwapRows',
                 'SwapCols',
@@ -75,15 +75,17 @@ class BoardGeneratorSimple {
             method = '',
             previousMethod = null;
 
-        for (let i = 0, j = 5; i < iterations; i++, j = 5) {
+        board = extend([], board);
+
+        for (let i = 0, j = 5; i < this.iterationsAmount; i++, j = 5) {
             do {
                 method = possibleMethods[math.random(1, methodsCount) - 1];
-            } while (method == previousMethod && j-- > 0);
+            } while (method === previousMethod && j-- > 0);
             board = this['shuffleBoardBy' + method](board);
             previousMethod = method;
         }
 
-        callback(null, board);
+        return board;
     }
 
     shuffleBoardByTransposing (board) {
@@ -145,9 +147,11 @@ class BoardGeneratorSimple {
         return newBoard;
     }
 
-    mergeBoardRows (board, callback) {
+    mergeBoardRows (board) {
         let mergedBoards = {},
             coords;
+
+        board = extend([], board);
 
         board.forEach((row, rowNumber) => {
             row.forEach((value, colNumber) => {
@@ -156,12 +160,14 @@ class BoardGeneratorSimple {
             });
         });
 
-        callback(null, mergedBoards);
+        return mergedBoards;
     }
 
     hideCells (boardHash, countCellsToHide) {
         let allKeys = Object.keys(boardHash),
             index;
+
+        boardHash = extend({}, boardHash);
 
         while (countCellsToHide > 0) {
             index = math.random(0, allKeys.length);
@@ -195,7 +201,7 @@ class BoardGeneratorSimple {
             possibleVerticalSquares = parseInt(size / 2) - 1; // 16 / 2 = 8 (with height 2) - 1 = 7 ... will be 4 squares
 
         while (possibleVerticalSquares > 2) {
-            if (!(size % possibleVerticalSquares)) {
+            if (size % possibleVerticalSquares === 0) {
                 verticalSquares = possibleVerticalSquares;
                 break;
             }
