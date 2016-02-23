@@ -176,16 +176,18 @@ class SudokuBoard {
      * @param boardState
      */
     applyState (boardState) {
-        $.each(boardState.checkedCells || {}, (coords, number) => {
-            let Cell = this.findCell(coords);
-            Cell.setNumber(number);
-        });
-        $.each(boardState.markedCells || {}, (coords, marks) => {
-            let Cell = this.findCell(coords);
-            Cell.setMarks(marks);
-            if (Cell.getMarks() && !Cell.getNumber()) {
-                Cell.container.addClass('marks');
-            }
+        var keys = [],
+            number,
+            marks;
+
+        keys.push(...Object.keys(boardState.checkedCells),...Object.keys(boardState.markedCells));
+        
+        this.clear();
+
+        $.each(keys, (i, coords) => {
+            number = boardState.checkedCells.hasOwnProperty(coords) ? boardState.checkedCells[coords] : undefined;
+            marks = boardState.markedCells.hasOwnProperty(coords) ? boardState.markedCells[coords] : undefined;
+            this.setCell(coords, number, marks);
         });
     }
 
@@ -226,12 +228,12 @@ class SudokuBoard {
     }
 
     setCell (cell, number, marks) {
-        if (typeof number != 'undefined') {
+        if (typeof number !== 'undefined') {
             if (this.setCellNumber(cell, number)) {
                 this.removeColRowMarks(cell, number);
             }
         }
-        if (typeof marks != 'undefined') {
+        if (typeof marks !== 'undefined') {
             this.setCellMarks(cell, marks);
         }
     }

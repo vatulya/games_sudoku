@@ -55,6 +55,9 @@ class SudokuControlNumpad {
                     self.Sudoku.clearBoard();
                 }
             })
+            .on('click', '.bot-start', function () {
+                self.Sudoku.botStart();
+            })
             .on('click', '.undo-move', function () {
                 if (!$(this).hasClass('disabled')) {
                     self.Sudoku.useHistory('undo');

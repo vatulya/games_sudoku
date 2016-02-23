@@ -3,7 +3,8 @@
 let extend = require('util')._extend,
 
     api = require('../libraries/api'),
-    Sudoku = require('../libraries/sudoku');
+    Sudoku = require('../libraries/sudoku'),
+    Bot = require('../libraries/bot');
 
 module.exports = (socket) => {
 
@@ -111,6 +112,36 @@ module.exports = (socket) => {
                 return forceRefresh(socket, error);
             });
     });
+
+    socket.on('startBot', (data) => {
+        console.log('WS: call "startBot"');
+
+        Sudoku.load(data._game_hash)
+            .then((sudoku) => {
+                let bot = new Bot(sudoku.board.state, (coords, number) => {
+                    console.log('BOT: action');
+                    let data = {
+                        checkedCells: {},
+                        markedCells: {}
+                    };
+                    data.checkedCells[coords] = number;
+                    return sudoku.setCells(data)
+                        .then((sudoku) => {
+                            let response = extend(sudoku.board.toHash(), sudoku.getSystemData());
+                            socket.emit('systemData', response);
+                        })
+                        .catch((error) => {
+                            return forceRefresh(socket, error);
+                        });
+                });
+
+                bot.start();
+            })
+            .catch((error) => {
+                return forceRefresh(socket, error);
+            });
+    });
+
 };
 
 function forceRefresh(socket, error) {

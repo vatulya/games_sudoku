@@ -155,6 +155,10 @@ class Sudoku {
         this.sendUserAction('clearBoard');
     }
 
+    botStart () {
+        this.sendUserAction('startBot');
+    }
+
     checkBoard () {
         this.sendUserAction('checkBoard');
     }
@@ -194,17 +198,25 @@ class Sudoku {
     /********************************************** WS METHODS RESPONSES ***/
 
     systemDataResponse (response) {
-        if (response.hasOwnProperty('_system') && $.isPlainObject(response['_system'])) {
-            var systemResponse = response['_system'];
-            if (systemResponse.hasOwnProperty('microtime') && systemResponse['microtime'] > this.lastSystemDataMicrotime) {
-                this.lastSystemDataMicrotime = systemResponse['microtime'];
-                if (this._checkGameHash(systemResponse['gameHash'] || '')) {
+        var systemResponse,
+            state;
+
+        if (response.hasOwnProperty('_system') && $.isPlainObject(response._system)) {
+            systemResponse = response._system;
+            if (systemResponse.hasOwnProperty('microtime') && systemResponse.microtime > this.lastSystemDataMicrotime) {
+                this.lastSystemDataMicrotime = systemResponse.microtime;
+                if (this._checkGameHash(systemResponse.gameHash || '')) {
                     if (systemResponse.resolved) {
                         this._win();
                     } else {
-                        this.history.setUndo(systemResponse['undoMove'] || {});
-                        this.history.setRedo(systemResponse['redoMove'] || {});
-                        this._updateGameServerTime(systemResponse['duration']);
+                        state = {
+                            checkedCells: response.checkedCells || {},
+                            markedCells: response.markedCells || {}
+                        };
+                        this.board.applyState(state);
+                        this.history.setUndo(systemResponse.undoMove || {});
+                        this.history.setRedo(systemResponse.redoMove || {});
+                        this._updateGameServerTime(systemResponse.duration);
                     }
                     return true;
                 }
@@ -306,7 +318,7 @@ class Sudoku {
             this.history.clear();
             if (this.isMarkMode) {
                 if (number > 0) {
-                    this.toggleCellMark(Cell, number)
+                    this.toggleCellMark(Cell, number);
                 } else {
                     this.clearCellMark(Cell);
                 }

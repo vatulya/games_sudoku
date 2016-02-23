@@ -1,3 +1,5 @@
+'use strict';
+
 function SudokuCell (container, boardSize) {
     this.container = $(container); // .cell
     this.boardSize = boardSize;
