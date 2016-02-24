@@ -1266,7 +1266,7 @@ if (typeof jQuery === 'undefined') {
     this.type       = null
     this.options    = null
     this.enabled    = null
-    this.timeout    = null
+    this.actionTimeout    = null
     this.hoverState = null
     this.$element   = null
     this.inState    = null
@@ -1373,13 +1373,13 @@ if (typeof jQuery === 'undefined') {
       return
     }
 
-    clearTimeout(self.timeout)
+    clearTimeout(self.actionTimeout)
 
     self.hoverState = 'in'
 
     if (!self.options.delay || !self.options.delay.show) return self.show()
 
-    self.timeout = setTimeout(function () {
+    self.actionTimeout = setTimeout(function () {
       if (self.hoverState == 'in') self.show()
     }, self.options.delay.show)
   }
@@ -1407,13 +1407,13 @@ if (typeof jQuery === 'undefined') {
 
     if (self.isInStateTrue()) return
 
-    clearTimeout(self.timeout)
+    clearTimeout(self.actionTimeout)
 
     self.hoverState = 'out'
 
     if (!self.options.delay || !self.options.delay.hide) return self.hide()
 
-    self.timeout = setTimeout(function () {
+    self.actionTimeout = setTimeout(function () {
       if (self.hoverState == 'out') self.hide()
     }, self.options.delay.hide)
   }
@@ -1717,7 +1717,7 @@ if (typeof jQuery === 'undefined') {
 
   Tooltip.prototype.destroy = function () {
     var that = this
-    clearTimeout(this.timeout)
+    clearTimeout(this.actionTimeout)
     this.hide(function () {
       that.$element.off('.' + that.type).removeData('bs.' + that.type)
       if (that.$tip) {

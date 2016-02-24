@@ -1,49 +1,21 @@
 'use strict';
 
-let Promise = require('promise');
+let extend = require('util')._extend,
+
+    Promise = require('promise'),
+
+    BotInstance = require('./bot/instance');
+
+let botInstances = [];
 
 class Bot {
 
-    constructor (sudokuBoardState, actionCallback) {
-        this.iterationInterval = null;
-        this.iterationsCount = 0;
-        this.sudokuBoardState = sudokuBoardState;
-        this.actionCallback = actionCallback;
-    }
+    static create (sudoku) {
+        let botInstance = new BotInstance(sudoku);
 
-    start () {
-        console.log('BOT START');
+        botInstances[sudoku.getHash()] = botInstance;
 
-        this.iterationInterval = setInterval(this.iteration.bind(this), 1000);
-    }
-
-    iteration () {
-        let allKeys = Object.keys(this.sudokuBoardState.cells),
-            targetCell,
-            newNumber;
-
-        allKeys.every((key) => {
-            let cell = this.sudokuBoardState.cells[key];
-            if (!cell.isOpen) {
-                targetCell = cell;
-                return false;
-            }
-            return true;
-        });
-
-        newNumber = targetCell.number ? 0 : 5;
-
-        this.actionCallback(targetCell.coords.toString(), newNumber);
-
-        if (this.iterationsCount++ > 10) {
-            this.stop();
-        }
-    }
-
-    stop () {
-        clearInterval(this.iterationInterval);
-        this.iterationsCount = 0;
-        console.log('BOT STOP');
+        return botInstance;
     }
 
 }

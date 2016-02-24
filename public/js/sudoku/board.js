@@ -181,7 +181,7 @@ class SudokuBoard {
             marks;
 
         keys.push(...Object.keys(boardState.checkedCells),...Object.keys(boardState.markedCells));
-        
+
         this.clear();
 
         $.each(keys, (i, coords) => {
