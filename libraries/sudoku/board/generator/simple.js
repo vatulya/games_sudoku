@@ -20,8 +20,10 @@ class BoardGeneratorSimple {
             }
 
             return this.generateSimpleBoard(size)
-                .then((board, squares) => {
-                    let parameters;
+                .then((result) => {
+                    let board = result.board,
+                        squares = result.squares,
+                        parameters;
 
                     board = this.shuffleBoard(board);
                     board = this.mergeBoardRows(board);
@@ -59,7 +61,7 @@ class BoardGeneratorSimple {
                 }
             }
 
-            return fulfill(board, squares);
+            return fulfill({board: board, squares: squares});
         });
     }
 

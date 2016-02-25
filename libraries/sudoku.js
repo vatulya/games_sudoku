@@ -156,10 +156,10 @@ class Sudoku {
             }
 
             return this.board.apply(changes)
-                .then((oldParameters, newParameters) => {
+                .then((result) => {
                     let action = new SudokuHistoryAction(SudokuHistoryAction.ACTION_TYPE_SET_CELLS, {
-                        oldParameters: oldParameters,
-                        newParameters: newParameters
+                        oldParameters: result.oldParameters,
+                        newParameters: result.newParameters
                     });
 
                     return this.history.addAction(action);
@@ -176,10 +176,10 @@ class Sudoku {
     clearBoard (data) {
         return new Promise((fulfill, reject) => {
             return this.board.clear()
-                .then((oldParameters, newParameters) => {
+                .then((result) => {
                     let action = new SudokuHistoryAction(SudokuHistoryAction.ACTION_TYPE_CLEAR_BOARD, {
-                        oldParameters: oldParameters,
-                        newParameters: newParameters
+                        oldParameters: result.oldParameters,
+                        newParameters: result.newParameters
                     });
 
                     return this.history.addAction(action);
@@ -246,10 +246,10 @@ class Sudoku {
             }
 
             return this.board.apply(changes)
-                .then((oldParameters, newParameters) => {
+                .then((result) => {
                     let action = new SudokuHistoryAction(actionType, {
-                        oldParameters: oldParameters,
-                        newParameters: newParameters
+                        oldParameters: result.oldParameters,
+                        newParameters: result.newParameters
                     });
 
                     return this.history.addAction(action)

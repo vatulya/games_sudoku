@@ -29,22 +29,24 @@ class BotInstance extends EventEmitter {
 
     loop () {
         this.strategy.calculateAction()
-            .then((strategyAction) => {
-                let timeout = this.calculateTimeout(strategyAction.difficulty);
+            .then((result) => {
+                if (!result.hasOwnProperty('actionName') || !result.hasOwnProperty('parameters') || !result.hasOwnProperty('difficulty')) {
+                    throw new Error('Bot error. Wrong calculated action: ' + JSON.stringify(result));
+                }
+
+                let timeout = this.calculateTimeout(result.difficulty);
 
                 this.actionTimeout = setTimeout(() => {
                     this.emit('beforeAction');
-
-                    let methodName;
 
                     if (this.acitonsCount++ > 10) {
                         this.stop();
                         return;
                     }
 
-                    methodName = 'strategy' + strategyAction.name;
+                    let methodName = 'strategy' + result.actionName;
 
-                    this[methodName].apply(this, strategyAction.getParametersAsArray())
+                    this[methodName](result.parameters)
                         .then(() => {
                             this.emit('afterAction');
 
@@ -70,26 +72,34 @@ class BotInstance extends EventEmitter {
         this.emit('stop');
     }
 
-    strategySetCellNumber (coords, number) {
+    strategySetCellNumber (parameters) {
+        if (!parameters.hasOwnProperty('coords') || !parameters.hasOwnProperty('number')) {
+            throw new Error('strategy SetCellNumber error. Wrong parameters. Parameters: ' + JSON.stringify(parameters));
+        }
+
         let data = {
             checkedCells: {},
             markedCells: {}
         };
-        data.checkedCells[coords] = number;
+        data.checkedCells[parameters.coords] = parameters.number;
 
         return this.sudoku.setCells(data);
     }
 
-    strategySetCellMark (coords, mark) {
+    strategySetCellMark (parameters) {
+        if (!parameters.hasOwnProperty('coords') || !parameters.hasOwnProperty('mark')) {
+            throw new Error('strategy SetCellNumber error. Wrong parameters. Parameters: ' + JSON.stringify(parameters));
+        }
+
         let data = {
                 checkedCells: {},
                 markedCells: {}
             },
-            cell = this.sudoku.getCellByCoords(coords),
-            marks = cell.marks;
+            cell = this.sudoku.getCellByCoords(parameters.coords),
+            marks = cell.marks; // TODO: check if marks array is not reference
 
-        marks.push(mark);
-        data.markedCells[coords] = marks;
+        marks.push(parameters.mark);
+        data.markedCells[parameters.coords] = marks;
 
         return this.sudoku.setCells(data);
     }

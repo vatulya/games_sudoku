@@ -80,7 +80,7 @@ class SudokuBoard {
 
             return this._save()
                 .then(() => {
-                    return fulfill(oldState.toHash(), this.state.toHash());
+                    return fulfill({oldParameters: oldState.toHash(), newParameters: this.state.toHash()});
                 })
                 .catch((error) => {
                     return reject(error);
@@ -96,7 +96,7 @@ class SudokuBoard {
 
             return this._save()
                 .then(() => {
-                    return fulfill(oldState.toHash(), this.state.toHash());
+                    return fulfill({oldParameters: oldState.toHash(), newParameters: this.state.toHash()});
                 })
                 .catch((error) => {
                     return reject(error);

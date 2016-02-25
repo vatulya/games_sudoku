@@ -1,8 +1,6 @@
 'use strict';
 
-let Promise = require('promise'),
-
-    BotStrategyAction = require('./aciton');
+let Promise = require('promise');
 
 class BotStrategySimple {
 
@@ -13,12 +11,11 @@ class BotStrategySimple {
     calculateAction () {
         return new Promise((fulfill, reject) => {
             let coords,
-                number = 5,
 
                 allCellsKeys = Object.keys(this.boardState.cells),
                 cell,
 
-                actionName = BotStrategyAction.ACTION_SET_CELL_NUMBER,
+                actionName = BotStrategySimple.ACTION_SET_CELL_NUMBER,
                 parameters,
                 difficulty = 5;
 
@@ -33,10 +30,14 @@ class BotStrategySimple {
 
             parameters = {coords: coords, number: cell.number ? 0 : 5};
 
-            fulfill(new BotStrategyAction(actionName, parameters, difficulty));
+            fulfill({actionName: actionName, parameters: parameters, difficulty: difficulty});
         });
     }
 
 }
+
+BotStrategySimple.ACTION_SET_CELL_NUMBER = 'SetCellNumber';
+BotStrategySimple.ACTION_SET_CELL_MARK = 'SetCellMark';
+BotStrategySimple.ACTION_UNDO = 'Undo';
 
 module.exports = BotStrategySimple;
