@@ -84,32 +84,32 @@ class BoardState {
                 if (!cellsPerCol[col]) {
                     cellsPerCol[col] = [];
                 }
-                if (!cellsPerSquare[Cell.squareNumber]) {
-                    cellsPerSquare[Cell.squareNumber] = [];
+                if (!cellsPerSquare[cell.squareNumber]) {
+                    cellsPerSquare[cell.squareNumber] = [];
                 }
 
                 cellsPerRow[row][col] = cell;
                 cellsPerCol[col][row] = cell;
-                cellsPerSquare[Cell.squareNumber].push(cell);
+                cellsPerSquare[cell.squareNumber].push(cell);
             }
         }
 
         // Initialize rows
         this.rows = [];
-        cellsPerRow.forEach((row) => {
-            this.rows[row] = new CellRow(cellsPerRow[row]);
+        cellsPerRow.forEach((rowCells, row) => {
+            this.rows[row] = new CellRow(rowCells);
         });
 
         // Initialize cols
         this.cols = [];
-        cellsPerCol.forEach((col) => {
-            this.cols[col] = new CellCol(cellsPerCol[col]);
+        cellsPerCol.forEach((colCells, col) => {
+            this.cols[col] = new CellCol(colCells);
         });
 
         // Initialize squares
         this.squares = [];
-        cellsPerSquare.forEach((square) => {
-            this.squares[square] = new CellSquare(cellsPerSquare[square]);
+        cellsPerSquare.forEach((squareCells, square) => {
+            this.squares[square] = new CellSquare(squareCells);
         });
     }
 

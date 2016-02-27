@@ -14,7 +14,6 @@ class BotInstance extends EventEmitter {
         this.sudoku = sudoku;
 
         this.actionTimeout = null;
-        this.acitonsCount = 0;
 
         this.strategy = new BotStrategySimple(this.sudoku.board.state);
     }
@@ -22,15 +21,18 @@ class BotInstance extends EventEmitter {
     start () {
         this.emit('start');
 
-        this.acitonsCount = 0;
-
         this.loop();
     }
 
     loop () {
         this.strategy.calculateAction()
             .then((result) => {
-                if (!result.hasOwnProperty('actionName') || !result.hasOwnProperty('parameters') || !result.hasOwnProperty('difficulty')) {
+                if (typeof result !== 'object'
+                    || !result.hasOwnProperty('actionName')
+                    || !result.hasOwnProperty('parameters')
+                    || typeof result.parameters !== 'object'
+                    || !result.hasOwnProperty('difficulty')
+                ) {
                     throw new Error('Bot error. Wrong calculated action: ' + JSON.stringify(result));
                 }
 
@@ -38,11 +40,6 @@ class BotInstance extends EventEmitter {
 
                 this.actionTimeout = setTimeout(() => {
                     this.emit('beforeAction');
-
-                    if (this.acitonsCount++ > 10) {
-                        this.stop();
-                        return;
-                    }
 
                     let methodName = 'strategy' + result.actionName;
 
