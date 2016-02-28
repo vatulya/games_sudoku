@@ -39,33 +39,33 @@ class SudokuBoard {
         allCells = this.container.find('.cell');
         size = parseInt(Math.sqrt(allCells.length));
         allCells.each((i, el) => {
-            let Cell = new SudokuCell(el, size),
-                row = Cell.coords.row,
-                col = Cell.coords.col,
-                square = Cell.squareNumber;
+            let cell = new SudokuCell(el, size),
+                row = cell.coords.row,
+                col = cell.coords.col,
+                square = cell.squareNumber;
 
-            this.cells[Cell.coords.toString()] = Cell;
+            this.cells[cell.coords.toString()] = cell;
 
             // Fill rows array
             if (!cellsPerRow[row]) {
                 cellsPerRow[row] = [];
             }
-            cellsPerRow[row][col] = Cell;
+            cellsPerRow[row][col] = cell;
 
             // Fill cols array
             if (!cellsPerCol[col]) {
                 cellsPerCol[col] = [];
             }
-            cellsPerCol[col][row] = Cell;
+            cellsPerCol[col][row] = cell;
 
             // Fill squares array
             if (!cellsPerSquare[square]) {
                 cellsPerSquare[square] = [];
             }
-            cellsPerSquare[square].push(Cell);
+            cellsPerSquare[square].push(cell);
 
             if (square % 2) {
-                Cell.container.addClass('gray');
+                cell.container.addClass('gray');
             }
         });
 
@@ -98,9 +98,9 @@ class SudokuBoard {
     initEvents () {
         this.board
             .on('mouseover', '.cell', (e) => {
-                let Cell = this.findCell(e.currentTarget);
+                let cell = this.findCell(e.currentTarget);
                 // hover vertical col and horizontal row
-                this.hoverColAndRow(Cell);
+                this.hoverColAndRow(cell);
             })
             .on('mouseout', () => {
                 // unhover vertical col and horizontal row
@@ -110,10 +110,9 @@ class SudokuBoard {
                 // look mousedown/mouseup
             })
             .on('mousedown', '.cell', (e) => {
-                let Cell = this.findCell(e.currentTarget);
-                this.selectCell(Cell);
-                //Cell.container.addClass('pushed'); // TODO: move into numpad
-                this.hoverNumber(Cell.getNumber());
+                let cell = this.findCell(e.currentTarget);
+                this.selectCell(cell);
+                this.hoverNumber(cell.getNumber());
             })
         ;
     }
@@ -129,12 +128,12 @@ class SudokuBoard {
 
     getHash () {
         let boardString = '',
-            Cell;
+            cell;
 
         for (var key in this.cells) {
             if (this.cells.hasOwnProperty(key)) {
-                Cell = this.cells[key];
-                boardString += '' + Cell.getNumber() + '_';
+                cell = this.cells[key];
+                boardString += '' + cell.getNumber() + '_';
             }
         }
 
@@ -142,21 +141,21 @@ class SudokuBoard {
     }
 
     findCell (el) {
-        let Coords = new SudokuCellCoords(el),
-            Cell = this.cells[Coords.toString()] || null;
+        let coords = new SudokuCellCoords(el),
+            cell = this.cells[coords.toString()] || null;
 
-        if (!Cell) {
-            throw new Error('Can\'t find cell by "' + el + '" and coords "' + Coords.toString() + '"');
+        if (!cell) {
+            throw new Error('Can\'t find cell by "' + el + '" and coords "' + coords.toString() + '"');
         }
 
-        return Cell;
+        return cell;
     }
 
     fill (board) {
         $.each(board.openedCells || {}, (coords, number) => {
-            let Cell = this.findCell(coords);
-            Cell.setNumber(number);
-            Cell.container.removeClass('open marks').addClass('locked');
+            let cell = this.findCell(coords);
+            cell.setNumber(number);
+            cell.container.removeClass('open marks').addClass('locked');
         });
         this.applyState(board);
     }
@@ -198,16 +197,16 @@ class SudokuBoard {
             markedCells: {}
         };
 
-        $.each(this.cells, function (i, Cell) {
-            let coords = Cell.coords.toString();
+        $.each(this.cells, function (i, cell) {
+            let coords = cell.coords.toString();
 
-            if (!Cell.isOpen()) {
-                state.openedCells[coords] = Cell.getNumber();
+            if (!cell.isOpen()) {
+                state.openedCells[coords] = cell.getNumber();
             } else {
-                if (Cell.getNumber() > 0) {
-                    state.checkedCells[coords] = Cell.getNumber();
+                if (cell.getNumber() > 0) {
+                    state.checkedCells[coords] = cell.getNumber();
                 }
-                state.markedCells[coords] = Cell.getMarks();
+                state.markedCells[coords] = cell.getMarks();
             }
         });
 
@@ -239,57 +238,67 @@ class SudokuBoard {
     }
 
     setCellNumber (cell, number) {
-        let Cell = this.findCell(cell);
-        if (Cell.isOpen()) {
-            Cell.setNumber(number);
-            Cell.getNumber() ? Cell.hideMarks() : Cell.showMarks();
+        cell = this.findCell(cell);
+        if (cell.isOpen()) {
+            cell.setNumber(number);
+            cell.getNumber() ? cell.hideMarks() : cell.showMarks();
         }
     }
 
     addCellMark (cell, mark) {
-        let Cell = this.findCell(cell);
-        if (Cell.isOpen()) {
-            Cell.addMark(mark);
-            if (Cell.isEmpty()) {
-                Cell.showMarks();
+        cell = this.findCell(cell);
+        if (cell.isOpen()) {
+            cell.addMark(mark);
+            if (cell.isEmpty()) {
+                cell.showMarks();
+            }
+        }
+    }
+
+    removeCellMark (cell, mark) {
+        cell = this.findCell(cell);
+        if (cell.isOpen()) {
+            cell.removeMark(mark);
+            if (cell.isEmpty()) {
+                cell.showMarks();
             }
         }
     }
 
     setCellMarks (cell, marks) {
-        let Cell = this.findCell(cell);
-        if (Cell.isOpen()) {
-            Cell.setMarks(marks);
-            if (Cell.isEmpty()) {
-                Cell.showMarks();
+        cell = this.findCell(cell);
+        if (cell.isOpen()) {
+            cell.setMarks(marks);
+            if (cell.isEmpty()) {
+                cell.showMarks();
             }
         }
     }
 
     removeColRowMarks (cell, mark) {
-        let Cell = this.findCell(cell);
-        this.rows[Cell.coords.getRow()].each((i, CellRow) => {
-            CellRow.removeMark(mark);
+        cell = this.findCell(cell);
+        this.rows[cell.coords.getRow()].each((i, cellRow) => {
+            cellRow.removeMark(mark);
         });
-        this.cols[Cell.coords.getCol()].each((i, CellCol) => {
-            CellCol.removeMark(mark);
+        this.cols[cell.coords.getCol()].each((i, cellCol) => {
+            cellCol.removeMark(mark);
         });
     }
 
     clear () {
-        $.each(this.cells, (i, Cell) => {
-            if (Cell.isOpen()) {
-                this.setCell(Cell, 0, []);
+        $.each(this.cells, (i, cell) => {
+            if (cell.isOpen()) {
+                this.setCell(cell, 0, []);
             }
         });
     }
 
-    hoverColAndRow (Cell) { // TURNED OFF
+    hoverColAndRow (cell) { // TURNED OFF
         this.board.find('.cell.hover').removeClass('hover');
-        if (Cell) {
-            Cell = this.findCell(Cell);
-            this.board.find('.cell.' + Cell.coords.getRowCssClass() + ', .cell.' + Cell.coords.getColCssClass()).addClass('hover'); // Hover row and col
-            Cell.container.removeClass('hover'); // But don't hover focus cell
+        if (cell) {
+            cell = this.findCell(cell);
+            this.board.find('.cell.' + cell.coords.getRowCssClass() + ', .cell.' + cell.coords.getColCssClass()).addClass('hover'); // Hover row and col
+            cell.container.removeClass('hover'); // But don't hover focus cell
         }
     }
 
@@ -297,9 +306,9 @@ class SudokuBoard {
         this.board.find('.cell.hovered').removeClass('hovered');
         number = parseInt(number);
         if (number > 0) {
-            $.each(this.cells, (i, Cell) => {
-                if (Cell.getNumber() == number) {
-                    Cell.container.addClass('hovered');
+            $.each(this.cells, (i, cell) => {
+                if (cell.getNumber() == number) {
+                    cell.container.addClass('hovered');
                 }
             });
         }
@@ -310,9 +319,9 @@ class SudokuBoard {
             this.board.addClass('no-errors');
         } else {
             $.each(errors, (i, coords) => {
-                let Cell = this.findCell(coords);
-                if (Cell) {
-                    Cell.container.addClass('error');
+                let cell = this.findCell(coords);
+                if (cell) {
+                    cell.container.addClass('error');
                 }
             });
         }

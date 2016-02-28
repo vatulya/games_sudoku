@@ -58,6 +58,9 @@ class SudokuControlNumpad {
             .on('click', '.bot-start', function () {
                 self.Sudoku.botStart();
             })
+            .on('click', '.mark-mode', function () {
+                self.Sudoku.markMode(!$(this).hasClass('active'));
+            })
             .on('click', '.undo-move', function () {
                 if (!$(this).hasClass('disabled')) {
                     self.Sudoku.useHistory('undo');

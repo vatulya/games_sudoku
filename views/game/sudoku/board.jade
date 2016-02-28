@@ -2,8 +2,8 @@ mixin drawCellContainer(Cell)
     - cellClasses = ['open', 'row-' + Cell.coords.row, 'col-' + Cell.coords.col, 'square-' + Cell.squareNumber];
     td.cell(class=cellClasses)
         span.number-container
-        - for (var number = 1; number < gameSudoku.getSize(); number++)
-            .mark(class=['mark', 'mark-' + number])
+        - for (var number = 1; number <= gameSudoku.getSize(); number++)
+            .mark(class=['mark', 'mark-' + number]) #{number}
 
 - boardClasses = ['size-big', 'hide-game']
 table.sudoku-board(class=boardClasses)

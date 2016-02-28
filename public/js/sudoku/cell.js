@@ -26,9 +26,13 @@ SudokuCell.prototype.setNumber = function (number) {
     return this;
 };
 
+SudokuCell.prototype.hasMark = function (mark) {
+    return this.container.hasClass('mark-' + parseInt(mark));
+};
+
 SudokuCell.prototype.addMark = function (mark) {
     mark = parseInt(mark);
-    if (mark > 1) {
+    if (mark > 0) {
         this.container.addClass('mark-' + mark);
     }
 };
@@ -61,13 +65,6 @@ SudokuCell.prototype.removeAllMarks = function () {
 SudokuCell.prototype.setMarks = function (marks) {
     this.removeAllMarks();
     this.addMarks(marks);
-};
-
-SudokuCell.prototype.toggleMark = function (mark) {
-    mark = parseInt(mark);
-    if (mark > 1) {
-        this.container.hasClass('mark-' + mark) ? this.removeMark(mark) : this.addMark(mark);
-    }
 };
 
 SudokuCell.prototype.getMarks = function () {

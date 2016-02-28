@@ -137,7 +137,11 @@ class Sudoku {
         }
 
         let diff = this._doBoardAction(() => {
-            this.board.toggleCellMark(cell, number);
+            if (this.board.findCell(cell).hasMark(number)) {
+                this.board.removeCellMark(cell, number);
+            } else {
+                this.board.addCellMark(cell, number);
+            }
         });
         this.sendUserAction('setCell', diff);
     }
@@ -298,6 +302,11 @@ class Sudoku {
         return this.board.size;
     }
 
+    markMode (enable) {
+        this.isMarkMode = !!enable;
+        this.trigger('markModeChanged', [this.isMarkMode]);
+    }
+
     selectCell (cell) {
         if (cell) {
             this.board.selectCell(cell);
@@ -313,19 +322,19 @@ class Sudoku {
     }
 
     checkNumber (number) {
-        var Cell = this.getSelectedCell();
-        if (Cell) {
+        var cell = this.getSelectedCell();
+        if (cell) {
             this.history.clear();
             if (this.isMarkMode) {
                 if (number > 0) {
-                    this.toggleCellMark(Cell, number);
+                    this.toggleCellMark(cell, number);
                 } else {
-                    this.clearCellMark(Cell);
+                    this.clearCellMark(cell);
                 }
             } else {
-                this.setCellNumber(Cell, number);
+                this.setCellNumber(cell, number);
             }
-            this.board.hoverNumber(Cell.getNumber());
+            this.board.hoverNumber(cell.getNumber());
         }
     }
 
