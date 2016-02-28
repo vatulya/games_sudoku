@@ -14,20 +14,20 @@ class SudokuControlNumpad {
     }
 
     initSudoku () {
-        var sudokuContainerId = 'game-sudoku-' + this.container.data('sudoku-hash');
-        var $sudokuContainer = $('#' + sudokuContainerId);
+        let sudokuContainerId = 'game-sudoku-' + this.container.data('sudoku-hash'),
+            $sudokuContainer = $('#' + sudokuContainerId),
+            Sudoku = $sudokuContainer.data('Sudoku');
+
         if (!$sudokuContainer.length) {
             throw new Error('Wrong Sudoku container "' + sudokuContainerId + '" for Numpad');
         }
 
-        var Sudoku = $sudokuContainer.data('Sudoku');
         if (Sudoku) {
             this.setSudoku(Sudoku);
         }
 
-        var self = this;
-        $sudokuContainer.on('Sudoku:initialize', function (e, Sudoku) {
-            self.setSudoku(Sudoku);
+        $sudokuContainer.on('Sudoku:initialize', (e, Sudoku) => {
+            this.setSudoku(Sudoku);
         });
     }
 
@@ -38,37 +38,36 @@ class SudokuControlNumpad {
     }
 
     initEvents () {
-        var self = this;
-
-        self.container
-            .on('click', '.number', function () {
-                var $el = $(this);
+        this.container
+            .on('click', '.number', (e) => {
+                let $el = $(e.currentTarget);
                 if (!$el.hasClass('disabled')) {
-                    self.Sudoku.checkNumber($el.data('number'));
+                    this.Sudoku.checkNumber($el.data('number'));
                 }
             })
-            .on('click', '.check-field', function () {
-                self.Sudoku.checkBoard();
+            .on('click', '.check-field', () => {
+                this.Sudoku.checkBoard();
             })
-            .on('click', '.clear-field', function () {
+            .on('click', '.clear-field', () => {
                 if (confirm('Вы действительно хотите очистить поле?\nЭто действие удалит все ваши ходы и пометки.')) {
-                    self.Sudoku.clearBoard();
+                    this.Sudoku.clearBoard();
                 }
             })
-            .on('click', '.bot-start', function () {
-                self.Sudoku.botStart();
+            .on('click', '.bot-start', () => {
+                this.Sudoku.botStart();
             })
-            .on('click', '.mark-mode', function () {
-                self.Sudoku.markMode(!$(this).hasClass('active'));
+            .on('click', '.mark-mode', (e) => {
+                e.stopImmediatePropagation();
+                this.Sudoku.setMarkMode(!$(e.currentTarget).hasClass('active'));
             })
-            .on('click', '.undo-move', function () {
-                if (!$(this).hasClass('disabled')) {
-                    self.Sudoku.useHistory('undo');
+            .on('click', '.undo-move', (e) => {
+                if (!$(e.currentTarget).hasClass('disabled')) {
+                    this.Sudoku.useHistory('undo');
                 }
             })
-            .on('click', '.redo-move', function () {
-                if (!$(this).hasClass('disabled')) {
-                    self.Sudoku.useHistory('redo');
+            .on('click', '.redo-move', (e) => {
+                if (!$(e.currentTarget).hasClass('disabled')) {
+                    this.Sudoku.useHistory('redo');
                 }
             })
 
@@ -94,13 +93,12 @@ class SudokuControlNumpad {
     }
 
     initSudokuEvents () {
-        var self = this;
-
         this.Sudoku
-            .on('allowedNumbersChanged', function (allowedNumbers) {
-                self.container.find('.number').each(function (i, el) {
-                    var $el = $(el);
-                    var number = parseInt($el.data('number'));
+            .on('allowedNumbersChanged', (allowedNumbers) => {
+                this.container.find('.number').each((i, el) => {
+                    let $el = $(el),
+                        number = parseInt($el.data('number')) || 0;
+
                     if (allowedNumbers[number]) {
                         $el.removeClass('disabled').addClass('enabled');
                     } else {
@@ -108,16 +106,27 @@ class SudokuControlNumpad {
                     }
                 });
             })
-            .on('undoHistoryChanged', function (isAllowed) {
-                var undoButton = self.container.find('.undo-move');
+            .on('undoHistoryChanged', (isAllowed) => {
+                let undoButton = this.container.find('.undo-move');
+
                 if (undoButton.length) {
                     isAllowed ? undoButton.removeClass('disabled') : undoButton.addClass('disabled');
                 }
             })
-            .on('redoHistoryChanged', function (isAllowed) {
-                var redoButton = self.container.find('.redo-move');
+            .on('redoHistoryChanged', (isAllowed) => {
+                let redoButton = this.container.find('.redo-move');
+
                 if (redoButton.length) {
                     isAllowed ? redoButton.removeClass('disabled') : redoButton.addClass('disabled');
+                }
+            })
+            .on('markModeChanged', (isMarkMode) => {
+                let markModeButton = this.container.find('.mark-mode');
+
+                if (isMarkMode) {
+                    markModeButton.addClass('active');
+                } else {
+                    markModeButton.removeClass('active');
                 }
             })
         ;
@@ -130,7 +139,7 @@ $.extend(SudokuControlNumpad.prototype, MixinEvent);
 // TODO: check this OLD code
 
 SudokuControlNumpad.prototype.getPopupNumpad = function () {
-    var $numpad = $Sudoku.table.find('.sudoku-numpad').clone().addClass('popup');
+    let $numpad = $Sudoku.table.find('.sudoku-numpad').clone().addClass('popup');
     $Sudoku.table.append($numpad);
     window.disableSelect($numpad);
     return $numpad;

@@ -25,7 +25,7 @@ window.disableSelect = function(el) {
 };
 
 String.prototype.toDDHHMMSS = function (showEmpty, showDays) {
-    var sec_num = parseInt(this, 10); // don't forget the second param
+    var sec_num = parseInt(this) || 0; // don't forget the second param
     var days    = Math.floor(sec_num / 86400);
     var hours   = Math.floor(sec_num / 3600);
     var minutes = Math.floor((sec_num - (hours * 3600)) / 60);

@@ -167,18 +167,20 @@ class BoardGeneratorSimple {
 
     hideCells (boardHash, countCellsToHide) {
         let allKeys = Object.keys(boardHash),
+            newBoard = {},
             index;
-
-        boardHash = extend({}, boardHash);
 
         while (countCellsToHide > 0) {
             index = math.random(0, allKeys.length);
-            boardHash[allKeys[index]] = 0;
             allKeys.splice(index, 1);
             countCellsToHide -= 1;
         }
 
-        return boardHash;
+        allKeys.forEach((key) => {
+            newBoard[key] = boardHash[key];
+        });
+
+        return newBoard;
     }
 
     convertSimpleBoardHashToParameters (boardHash, squares) {

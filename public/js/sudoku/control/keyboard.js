@@ -15,38 +15,37 @@ class SudokuControlKeyboard {
     }
 
     initSudoku () {
-        var sudokuContainerId = 'game-sudoku-' + this.sudokuHash;
-        var $sudokuContainer = $('#' + sudokuContainerId);
+        let sudokuContainerId = 'game-sudoku-' + this.sudokuHash,
+            $sudokuContainer = $('#' + sudokuContainerId),
+            Sudoku = $sudokuContainer.data('Sudoku');
+
         if (!$sudokuContainer.length) {
             throw new Error('Wrong Sudoku container "' + sudokuContainerId + '" for Numpad');
         }
 
-        var Sudoku = $sudokuContainer.data('Sudoku');
         if (Sudoku) {
             this.Sudoku = Sudoku;
         }
 
-        var self = this;
-        $sudokuContainer.on('Sudoku:initialize', function (e, Sudoku) {
-            self.Sudoku = Sudoku;
+        $sudokuContainer.on('Sudoku:initialize', (e, Sudoku) => {
+            this.Sudoku = Sudoku;
         });
     }
 
     initEvents () {
-        var self = this;
-
         $(document)
-            .on('keypress', function (e) {
-                self.keyPress(e.charCode);
+            .on('keypress', (e) => {
+                this.keyPress(e.charCode);
             })
         ;
     }
 
     keyPress (charCode) {
+        let number = parseInt(String.fromCharCode(charCode)) || 0;
+
         if (charCode == 96 || charCode == 42) { // ~` OR *
-            this.Sudoku.isMarkMode = !this.Sudoku.isMarkMode; // Toggle
+            this.Sudoku.setMarkMode(!this.Sudoku.isMarkMode); // Toggle
         } else {
-            var number = parseInt(String.fromCharCode(charCode));
             this.Sudoku.checkNumber(number);
         }
     }

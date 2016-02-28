@@ -37,7 +37,7 @@ class SudokuBoard {
         // Initialize cells
         this.cells = {};
         allCells = this.container.find('.cell');
-        size = parseInt(Math.sqrt(allCells.length));
+        size = parseInt(Math.sqrt(allCells.length)) || 0;
         allCells.each((i, el) => {
             let cell = new SudokuCell(el, size),
                 row = cell.coords.row,
@@ -304,7 +304,7 @@ class SudokuBoard {
 
     hoverNumber (number) {
         this.board.find('.cell.hovered').removeClass('hovered');
-        number = parseInt(number);
+        number = parseInt(number) || 0;
         if (number > 0) {
             $.each(this.cells, (i, cell) => {
                 if (cell.getNumber() == number) {
@@ -349,15 +349,18 @@ class SudokuBoard {
                 checkedCells: {},
                 markedCells: {}
             },
-            keys = [];
+            keys;
 
         // checkedCells
         keys = [];
         keys.push(...Object.keys(oldState.checkedCells),...Object.keys(newState.checkedCells));
         keys = $.unique(keys);
         keys.forEach((key) => {
-            if (parseInt(oldState.checkedCells[key]) != parseInt(newState.checkedCells[key])) {
-                diff.checkedCells[key] = parseInt(newState.checkedCells[key]);
+            let oldNumber = parseInt(oldState.checkedCells[key]) || 0,
+                newNumber = parseInt(newState.checkedCells[key]) || 0;
+
+            if (oldNumber != newNumber) {
+                diff.checkedCells[key] = newNumber;
             }
         });
 

@@ -4,20 +4,20 @@ let BoardStorageAbstract = require('./abstract');
 
 class BoardStorageMongoose extends BoardStorageAbstract {
 
-    constructor(model) {
+    constructor (model) {
         super();
         this.model = model;
     }
 
-    getId() {
+    getId () {
         return this.getParameter('id');
     }
 
-    getParameter(parameter) {
+    getParameter (parameter) {
         return this.model.get(parameter);
     }
 
-    save(parameters) {
+    save (parameters) {
         return new Promise((fulfill, reject) => {
             let allKeys = Object.keys(parameters);
 

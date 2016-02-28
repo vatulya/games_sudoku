@@ -118,7 +118,7 @@ class Sudoku {
     }
 
     setCellNumber (cell, number) {
-        number = parseInt(number);
+        number = parseInt(number) || 0;
         if (number < 0 || number > this.getSize()) {
             throw new Error('Can\'t set number "' + number + '". Wrong number.');
         }
@@ -131,7 +131,7 @@ class Sudoku {
     }
 
     toggleCellMark (cell, number) {
-        number = parseInt(number);
+        number = parseInt(number) || 0;
         if (number < 1 || number > this.getSize()) {
             throw new Error('Can\'t set mark "' + number + '". Wrong number.');
         }
@@ -302,7 +302,7 @@ class Sudoku {
         return this.board.size;
     }
 
-    markMode (enable) {
+    setMarkMode (enable) {
         this.isMarkMode = !!enable;
         this.trigger('markModeChanged', [this.isMarkMode]);
     }

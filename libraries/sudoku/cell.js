@@ -42,7 +42,7 @@ class Cell {
 
     checkNumber (number) {
         number = parseInt(number);
-        return !!(number >= 0 && number <= this.boardSize);
+        return (number >= 0 && number <= this.boardSize);
     }
 
     /***************** /NUMBER ***/
@@ -60,26 +60,24 @@ class Cell {
     }
 
     addMarks (marks) {
-        return marks.every(this.addMark);
+        return marks.every(this.addMark.bind(this));
     }
 
     removeMark (mark) {
         if (this.hasMark(mark)) {
-            this.marks.slice(this.marks.indexOf(+mark), 1);
+            this.marks.splice(this.marks.indexOf(+mark), 1);
             return true;
         }
         return false;
     }
 
     removeMarks (marks) {
-        return marks.every(this.removeMark);
+        return marks.every(this.removeMark.bind(this));
     }
 
     removeAllMarks () {
         for (let mark = 1; mark <= this.boardSize; mark += 1) {
-            if (!this.removeMark(mark)) {
-                return false;
-            }
+            this.removeMark(mark);
         }
         return true;
     }

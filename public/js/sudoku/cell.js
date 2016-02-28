@@ -8,7 +8,7 @@ function SudokuCell (container, boardSize) {
     this._number = parseInt(this.container.find('.number-container').html()) || 0;
 
     this.coords = new SudokuCellCoords(this);
-    this.squareNumber = parseInt(this.getSquareFromCssClass(this.container.attr('class')));
+    this.squareNumber = parseInt(this.getSquareFromCssClass(this.container.attr('class'))) || 0;
 }
 
 SudokuCell.prototype.getNumber = function () {
@@ -16,7 +16,7 @@ SudokuCell.prototype.getNumber = function () {
 };
 
 SudokuCell.prototype.setNumber = function (number) {
-    this._number = parseInt(number);
+    this._number = parseInt(number) || 0;
     this.container.find('.number-container').html(this._number > 0 ? this._number : '');
     if (this._number > 0) {
         this.container.removeClass('empty');
@@ -27,14 +27,16 @@ SudokuCell.prototype.setNumber = function (number) {
 };
 
 SudokuCell.prototype.hasMark = function (mark) {
-    return this.container.hasClass('mark-' + parseInt(mark));
+    mark = parseInt(mark) || 0;
+    return this.container.hasClass('mark-' + mark);
 };
 
 SudokuCell.prototype.addMark = function (mark) {
-    mark = parseInt(mark);
+    mark = parseInt(mark) || 0;
     if (mark > 0) {
         this.container.addClass('mark-' + mark);
     }
+    return this;
 };
 
 SudokuCell.prototype.addMarks = function (marks) {
@@ -42,11 +44,15 @@ SudokuCell.prototype.addMarks = function (marks) {
     $.each(marks, function (i, mark) {
         self.addMark(mark);
     });
+    return this;
 };
 
 SudokuCell.prototype.removeMark = function (mark) {
-    mark = parseInt(mark);
-    this.container.removeClass('mark-' + mark);
+    mark = parseInt(mark) || 0;
+    if (mark) {
+        this.container.removeClass('mark-' + mark);
+    }
+    return this;
 };
 
 SudokuCell.prototype.removeMarks = function (marks) {
@@ -54,17 +60,20 @@ SudokuCell.prototype.removeMarks = function (marks) {
     $.each(marks, function (i, mark) {
         self.removeMark(mark);
     });
+    return this;
 };
 
 SudokuCell.prototype.removeAllMarks = function () {
     for (var number = 1; number <= this.boardSize; number++) {
         this.container.removeClass('mark-' + number);
     }
+    return this;
 };
 
 SudokuCell.prototype.setMarks = function (marks) {
     this.removeAllMarks();
     this.addMarks(marks);
+    return this;
 };
 
 SudokuCell.prototype.getMarks = function () {
@@ -79,18 +88,20 @@ SudokuCell.prototype.getMarks = function () {
 
 SudokuCell.prototype.showMarks = function () {
     this.container.addClass('marks');
+    return this;
 };
 
 SudokuCell.prototype.hideMarks = function () {
     this.container.removeClass('marks');
+    return this;
 };
 
 SudokuCell.prototype.isOpen = function () {
-    return !!this.container.hasClass('open');
+    return this.container.hasClass('open');
 };
 
 SudokuCell.prototype.isEmpty = function () {
-    return !!this.container.hasClass('empty');
+    return this.container.hasClass('empty');
 };
 
 SudokuCell.prototype.getSquareFromCssClass = function (cssClassesString) {

@@ -32,8 +32,8 @@ function SudokuCellCoords(row, col) {
         this.col = this.getColFromCssClass(classesString);
     }
 
-    this.row = parseInt(this.row);
-    this.col = parseInt(this.col);
+    this.row = parseInt(this.row) || 0;
+    this.col = parseInt(this.col) || 0;
 
     if (!this.row || !this.col) {
         throw new Error('Can\'t initialize SudokuCellCoords. Wrong parameters.');
