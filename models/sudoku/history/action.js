@@ -1,13 +1,36 @@
 'use strict';
 
-let mongoose = require('./../../mongoose');
+let mongoose = require('./../../mongoose'),
+
+    a = function (x) {
+        return JSON.stringify(x);
+    },
+    b = function (x) {
+        return JSON.parse(x);
+    },
+    c = function (x) {
+        return JSON.stringify(x);
+    },
+    d = function (x) {
+        return JSON.parse(x);
+    };
 
 let actionSchema = mongoose.Schema({
     gameHash: mongoose.Schema.Types.String,
     created: Number,
     actionType: String,
-    oldParameters: {},
-    newParameters: {}
+    oldParameters: {
+        type: String,
+        default: '',
+        set: a,
+        get: b
+    },
+    newParameters: {
+        type: String,
+        default: '',
+        set: c,
+        get: d
+    }
 });
 
 actionSchema.index({

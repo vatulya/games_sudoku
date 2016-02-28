@@ -66,7 +66,7 @@ class BoardState {
                         cellParameters.number = checkedCells[key];
                     }
                     if (markedCells.hasOwnProperty(key)) {
-                        cellParameters.marks = markedCells[key];
+                        cellParameters.marks = markedCells[key].slice();
                     }
                 }
 
