@@ -111,6 +111,8 @@ class BoardState {
         cellsPerSquare.forEach((squareCells, square) => {
             this.squares[square] = new CellSquare(squareCells);
         });
+
+        return this;
     }
 
     /**
@@ -178,14 +180,15 @@ class BoardState {
     }
 
     clear () {
-        for (let key in this.cells) {
-            if (this.cells.hasOwnProperty(key)) {
-                if (!this.cells[key].isOpen) {
-                    this.cells[key].setNumber();
-                    this.cells[key].removeAllMarks();
-                }
+        Object.keys(this.cells).forEach((key) => {
+            let cell = this.cells[key];
+            if (!cell.isOpen) {
+                cell.setNumber(0);
+                cell.removeAllMarks();
             }
-        }
+        });
+
+        return this;
     }
 
     /**
@@ -196,6 +199,24 @@ class BoardState {
     getCellByCoords (row, col) {
         let Coords = new CellCoords(row, col);
         return this.cells[Coords.toString()];
+    }
+
+    /**
+     * @param {CellCoords} coords
+     * @param {Number} number
+     */
+    removeColRowMarks (coords, number) {
+        let row = this.rows[coords.row],
+            col = this.cols[coords.col];
+
+        Object.keys(row.cells).forEach((key) => {
+            row.cells[key].removeMark(number);
+        });
+        Object.keys(col.cells).forEach((key) => {
+            col.cells[key].removeMark(number);
+        });
+
+        return this;
     }
 
     toHash () {
@@ -219,7 +240,7 @@ class BoardState {
                     hash.checkedCells[key] = number;
                 }
                 if (cell.marks.length) {
-                    hash.markedCells[key] = cell.marks;
+                    hash.markedCells[key] = cell.marks.slice();
                 }
             }
             hash.squares[key] = +cell.squareNumber;

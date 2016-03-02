@@ -217,6 +217,23 @@ class Sudoku {
         });
     }
 
+    getSystemData () {
+        return {
+            _system: {
+                gameHash: this.getHash(),
+                undoMove: this.getUndo(),
+                redoMove: this.getRedo(),
+                duration: 15, // this.duration,
+                microtime: new Date().getTime(),
+                resolved: this.board.isResolved()
+            }
+        };
+    }
+
+    /********************************************** /PUBLIC METHODS ***/
+
+    /********************************************** PROTECTED METHODS ***/
+
     _useHistory (type) {
         return new Promise((fulfill, reject) => {
             let method,
@@ -262,20 +279,7 @@ class Sudoku {
         });
     }
 
-    getSystemData () {
-        return {
-            _system: {
-                gameHash: this.getHash(),
-                undoMove: this.getUndo(),
-                redoMove: this.getRedo(),
-                duration: 15, // this.duration,
-                microtime: new Date().getTime(),
-                resolved: this.board.isResolved()
-            }
-        };
-    }
-
-    /********************************************** /PUBLIC METHODS ***/
+    /********************************************** /PROTECTED METHODS ***/
 
 }
 

@@ -2,9 +2,8 @@
 
 let EventEmitter = require('events'),
 
-    Promise = require('promise'),
-
-    BotStrategySimple = require('./strategy/simple');
+    BotStrategySimple = require('./strategy/simple'),
+    CellCoords = require('./../sudoku/cell/coords');
 
 class BotInstance extends EventEmitter {
 
@@ -75,16 +74,28 @@ class BotInstance extends EventEmitter {
         }
 
         let data = {
-            checkedCells: {},
-            markedCells: {}
-        };
+                checkedCells: {},
+                markedCells: {}
+            },
+            coords = new CellCoords(parameters.coords),
+            newState = this.sudoku.board.state.copy(),
+            diff;
+
         data.checkedCells[parameters.coords] = parameters.number;
+
+        newState.removeColRowMarks(coords, parameters.number);
+        newState.getCellByCoords(coords).removeAllMarks();
+        diff = this.sudoku.board.state.diff(newState);
+        
+        if (Object.keys(diff.markedCells).length) {
+            data.markedCells = diff.markedCells;
+        }
 
         return this.sudoku.setCells(data);
     }
 
     strategySetCellMark (parameters) {
-        if (!parameters.hasOwnProperty('coords') || !parameters.hasOwnProperty('mark')) {
+        if (!parameters.hasOwnProperty('coords') || !parameters.hasOwnProperty('number')) {
             throw new Error('strategy SetCellNumber error. Wrong parameters. Parameters: ' + JSON.stringify(parameters));
         }
 
@@ -93,9 +104,9 @@ class BotInstance extends EventEmitter {
                 markedCells: {}
             },
             cell = this.sudoku.getCellByCoords(parameters.coords),
-            marks = cell.marks; // TODO: check if marks array is not reference
+            marks = cell.marks.slice();
 
-        marks.push(parameters.mark);
+        marks.push(parameters.number);
         data.markedCells[parameters.coords] = marks;
 
         return this.sudoku.setCells(data);

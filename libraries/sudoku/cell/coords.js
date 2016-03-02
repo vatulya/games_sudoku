@@ -48,7 +48,9 @@ class CellCoords {
     static parse (row, col) {
         let coords = [];
 
-        if (+row > 0 && +col > 0) {
+        if (row instanceof CellCoords) {
+            coords = [row.row, row.col];
+        } else if (+row > 0 && +col > 0) {
             coords = [row, col];
         } else if (typeof row === 'string') {
             coords = row.split(separator, 2);
