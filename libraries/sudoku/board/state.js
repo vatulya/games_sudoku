@@ -14,17 +14,17 @@ class BoardState {
         this.size = +parameters.size; // 4, 6, 9, ...
 
         this.cells = {};
-        this.rows = [];
-        this.cols = [];
-        this.squares = [];
+        this.rows = {};
+        this.cols = {};
+        this.squares = {};
 
         this.init(parameters);
     }
 
     init (parameters) {
-        let cellsPerRow = [],
-            cellsPerCol = [],
-            cellsPerSquare = [],
+        let cellsPerRow = {},
+            cellsPerCol = {},
+            cellsPerSquare = {},
             openedCells = parameters.openedCells || {},
             checkedCells = parameters.checkedCells || {},
             markedCells = parameters.markedCells || {},
@@ -37,11 +37,12 @@ class BoardState {
             cell;
 
         this.openedCells = {};
+        this.notOpenedCells = {};
 
         this.cells = {};
-        this.rows = [];
-        this.cols = [];
-        this.squares = [];
+        this.rows = {};
+        this.cols = {};
+        this.squares = {};
 
         for (row = 1; row <= this.size; row += 1) {
             for (col = 1; col <= this.size; col += 1) {
@@ -76,6 +77,8 @@ class BoardState {
 
                 if (cell.isOpen) {
                     this.openedCells[coords] = cell;
+                } else {
+                    this.notOpenedCells[coords] = cell;
                 }
 
                 if (!cellsPerRow[row]) {
@@ -95,21 +98,21 @@ class BoardState {
         }
 
         // Initialize rows
-        this.rows = [];
-        cellsPerRow.forEach((rowCells, row) => {
-            this.rows[row] = new CellRow(rowCells);
+        this.rows = {};
+        Object.keys(cellsPerRow).forEach((row) => {
+            this.rows[row] = new CellRow(cellsPerRow[row]);
         });
 
         // Initialize cols
-        this.cols = [];
-        cellsPerCol.forEach((colCells, col) => {
-            this.cols[col] = new CellCol(colCells);
+        this.cols = {};
+        Object.keys(cellsPerCol).forEach((col) => {
+            this.cols[col] = new CellCol(cellsPerCol[col]);
         });
 
         // Initialize squares
-        this.squares = [];
-        cellsPerSquare.forEach((squareCells, square) => {
-            this.squares[square] = new CellSquare(squareCells);
+        this.squares = {};
+        Object.keys(cellsPerSquare).forEach((square) => {
+            this.squares[square] = new CellSquare(cellsPerSquare[square]);
         });
 
         return this;
@@ -131,18 +134,15 @@ class BoardState {
             newState = new BoardState(newState);
         }
 
-        for (let coords in this.cells) {
-            if (!this.cells.hasOwnProperty(coords)) {
+        for (let coords in this.notOpenedCells) {
+            if (!this.notOpenedCells.hasOwnProperty(coords)) {
                 continue;
             }
-            if (!newState.cells.hasOwnProperty(coords)) {
+            if (!newState.notOpenedCells.hasOwnProperty(coords)) {
                 continue; // error!
             }
-            if (this.cells[coords].isOpen) {
-                continue;
-            }
 
-            oldCell = this.cells[coords];
+            oldCell = this.notOpenedCells[coords];
             newCell = newState.cells[coords];
 
             if (oldCell.number !== newCell.number) {
@@ -180,12 +180,10 @@ class BoardState {
     }
 
     clear () {
-        Object.keys(this.cells).forEach((key) => {
-            let cell = this.cells[key];
-            if (!cell.isOpen) {
-                cell.setNumber(0);
-                cell.removeAllMarks();
-            }
+        Object.keys(this.notOpenedCells).forEach((key) => {
+            let cell = this.notOpenedCells[key];
+            cell.setNumber(0);
+            cell.removeAllMarks();
         });
 
         return this;
@@ -202,21 +200,54 @@ class BoardState {
     }
 
     /**
-     * @param {CellCoords} coords
+     * @param {Cell} cell
      * @param {Number} number
      */
-    removeColRowMarks (coords, number) {
-        let row = this.rows[coords.row],
-            col = this.cols[coords.col];
+    removeColRowSquareMarks (cell, number) {
+        let row = this.rows[cell.coords.row],
+            col = this.cols[cell.coords.col],
+            square = this.squares[cell.squareNumber];
 
         Object.keys(row.cells).forEach((key) => {
-            row.cells[key].removeMark(number);
+            if (!row.cells[key].isOpen) {
+                row.cells[key].removeMark(number);
+            }
         });
         Object.keys(col.cells).forEach((key) => {
-            col.cells[key].removeMark(number);
+            if (!col.cells[key].isOpen) {
+                col.cells[key].removeMark(number);
+            }
+        });
+        Object.keys(square.cells).forEach((key) => {
+            if (!square.cells[key].isOpen) {
+                square.cells[key].removeMark(number);
+            }
         });
 
         return this;
+    }
+
+    /**
+     * @param {Cell} cell
+     * @param {Number} number
+     */
+    isAllowedNumberPosition(cell, number) {
+        let row = this.rows[cell.coords.row],
+            col = this.cols[cell.coords.col],
+            square = this.squares[cell.squareNumber],
+
+            checkGroup = (group) => {
+                return Object.keys(group.cells).every((key) => {
+                    if (group.cells[key].coords.toString() !== cell.coords.toString()) {
+                        if (group.cells[key].number === number) {
+                            return false;
+                        }
+                    }
+                    return true;
+                });
+            };
+
+        return [row, col, square].every(checkGroup);
     }
 
     toHash () {

@@ -28,7 +28,7 @@ class BoardGeneratorSimple {
                     board = this.shuffleBoard(board);
                     board = this.mergeBoardRows(board);
                     parameters = this.convertSimpleBoardHashToParameters(board, squares);
-                    parameters.openedCells = this.hideCells(parameters.openedCells, 45);/* parameters.difficulty.getHiddenCellsCount() */
+                    parameters.openedCells = this.hideCells(parameters.openedCells, 55);/* parameters.difficulty.getHiddenCellsCount() */
 
                     return fulfill(parameters);
                 })

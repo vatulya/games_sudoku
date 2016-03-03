@@ -24,6 +24,8 @@ class BotInstance extends EventEmitter {
     }
 
     loop () {
+        let loopStop = this.stop.bind(this);
+
         this.strategy.calculateAction()
             .then((result) => {
                 if (typeof result !== 'object'
@@ -35,27 +37,26 @@ class BotInstance extends EventEmitter {
                     throw new Error('Bot error. Wrong calculated action: ' + JSON.stringify(result));
                 }
 
-                let timeout = this.calculateTimeout(result.difficulty);
+                if (!result.parameters.hasOwnProperty('whileCallback')) {
+                    result.parameters.whileCallback = () => { return false; }; // do action once
+                }
 
-                this.actionTimeout = setTimeout(() => {
-                    this.emit('beforeAction');
+                let timeout = this.calculateTimeout(result.difficulty),
+                    recurse = () => {
+                        this.doStrategyAction(result.actionName, result.parameters, timeout)
+                            .then(() => {
+                                if (result.parameters.whileCallback()) {
+                                    recurse();
+                                } else {
+                                    this.loop(); // run loop again
+                                }
+                            })
+                            .catch(loopStop);
+                    };
 
-                    let methodName = 'strategy' + result.actionName;
-
-                    this[methodName](result.parameters)
-                        .then(() => {
-                            this.emit('afterAction');
-
-                            this.loop(); // run loop again
-                        })
-                        .catch((error) => {
-                            this.stop(error);
-                        });
-                }, timeout);
+                recurse();
             })
-            .catch((error) => {
-                this.stop(error);
-            });
+            .catch(loopStop);
     }
 
     stop (error) {
@@ -66,6 +67,23 @@ class BotInstance extends EventEmitter {
         clearTimeout(this.actionTimeout);
 
         this.emit('stop');
+    }
+
+    doStrategyAction (actionName, parameters, timeout) {
+        return new Promise((fulfill, reject) => {
+            this.actionTimeout = setTimeout(() => {
+                this.emit('beforeAction');
+
+                let methodName = 'strategy' + actionName;
+
+                this[methodName](parameters)
+                    .then(() => {
+                        this.emit('afterAction');
+                        return fulfill();
+                    })
+                    .catch(reject);
+            }, timeout);
+        });
     }
 
     strategySetCellNumber (parameters) {
@@ -79,14 +97,16 @@ class BotInstance extends EventEmitter {
             },
             coords = new CellCoords(parameters.coords),
             newState = this.sudoku.board.state.copy(),
-            diff;
+            diff,
+            newCell;
 
         data.checkedCells[parameters.coords] = parameters.number;
 
-        newState.removeColRowMarks(coords, parameters.number);
-        newState.getCellByCoords(coords).removeAllMarks();
+        newCell = newState.getCellByCoords(coords);
+        newState.removeColRowSquareMarks(newCell, parameters.number);
+        newCell.removeAllMarks();
         diff = this.sudoku.board.state.diff(newState);
-        
+
         if (Object.keys(diff.markedCells).length) {
             data.markedCells = diff.markedCells;
         }
@@ -96,7 +116,7 @@ class BotInstance extends EventEmitter {
 
     strategySetCellMark (parameters) {
         if (!parameters.hasOwnProperty('coords') || !parameters.hasOwnProperty('number')) {
-            throw new Error('strategy SetCellNumber error. Wrong parameters. Parameters: ' + JSON.stringify(parameters));
+            throw new Error('strategy SetCellMark error. Wrong parameters. Parameters: ' + JSON.stringify(parameters));
         }
 
         let data = {

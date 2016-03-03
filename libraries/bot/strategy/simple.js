@@ -6,36 +6,112 @@ class BotStrategySimple {
         this.boardState = boardState;
         this.cellsWithMarks = {};
         this.numbersWithMarks = [];
+        this.guessCells = [];
     }
 
     calculateAction () {
         return new Promise((fulfill, reject) => {
             let result,
-                difficulty,
-                actionName = BotStrategySimple.ACTION_SET_CELL_NUMBER,
                 parameters;
 
-            result = this.findAloneCell(5);
+            result = this.checkErrors(5);
+
+            if (!result) {
+                result = this.findAloneCell(5);
+            }
+
+            if (!result) {
+                result = this.findAloneMark(3);
+            }
 
             if (!result) {
                 result = this.findAloneMarkNumberPerGroup(3);
             }
 
             if (!result) {
-                result = this.setMarks(3);
-                actionName = BotStrategySimple.ACTION_SET_CELL_MARK;
+                result = this.setMarks(0); //3
+            }
+
+            if (!result) {
+                result = this.guessCell(5);
             }
 
             if (result) {
-                parameters = {
-                    coords: result.cell.coords.toString(),
-                    number: result.number
-                };
-                difficulty = result.difficulty;
+                switch (result.actionName) {
+                    case BotStrategySimple.ACTION_SET_CELL_NUMBER:
+                    case BotStrategySimple.ACTION_SET_CELL_MARK:
+                        parameters = {
+                            coords: result.cell.coords.toString(),
+                            number: result.number
+                        };
+                        break;
+
+                    case BotStrategySimple.ACTION_UNDO:
+                        parameters = {
+                            whileCallback: result.whileCallback || null
+                        };
+                        break;
+
+                    default:
+                        // error
+                        break;
+                }
+
+                return fulfill({actionName: result.actionName, parameters: parameters, difficulty: result.difficulty});
             }
 
-            fulfill({actionName: actionName, parameters: parameters, difficulty: difficulty});
+            return reject(new Error('Can\'t find any action'));
         });
+    }
+
+    /*** *********************** ***/
+
+    checkErrors (difficulty) {
+        let allNumbers = Array.apply(null, new Array(this.boardState.size)).map((_, i) => { return i + 1; }),
+            result,
+            targetCell,
+            isError;
+
+        if (this.guessCells.length) {
+            isError = !Object.keys(this.boardState.notOpenedCells).every((key) => {
+                let cell = this.boardState.notOpenedCells[key];
+
+                if (cell.number) {
+                    return true;
+                }
+
+                if (cell.marks.length) {
+                    return cell.marks.every((mark) => {
+                        return this.boardState.isAllowedNumberPosition(cell, mark);
+                    });
+                } else {
+                    return allNumbers.some((number) => {
+                        return this.boardState.isAllowedNumberPosition(cell, number);
+                    });
+                }
+            });
+
+            if (isError) {
+                targetCell = this.guessCells.pop();
+                result = {
+                    whileCallback: () => {
+                        let cell = this.boardState.getCellByCoords(targetCell.coords);
+                        if (!cell.number) { // good. now wrong cell is empty. Let's remove wrong number mark
+                            cell.removeMark(targetCell.number);
+                            return false;
+                        }
+                        return true;
+                    }
+                };
+            }
+        }
+
+        if (result) {
+            result.difficulty = difficulty;
+            result.actionName = BotStrategySimple.ACTION_UNDO;
+        }
+
+        return result;
     }
 
     /*** *********************** ***/
@@ -53,6 +129,7 @@ class BotStrategySimple {
 
         if (result) {
             result.difficulty = difficulty;
+            result.actionName = BotStrategySimple.ACTION_SET_CELL_NUMBER;
         }
 
         return result;
@@ -61,8 +138,8 @@ class BotStrategySimple {
     findAloneCellInGroups (groups) {
         let result = null;
 
-        groups.every((group) => {
-            result = this.findAloneCellInGroup(group);
+        Object.keys(groups).every((key) => {
+            result = this.findAloneCellInGroup(groups[key]);
             return !result;
         });
 
@@ -74,8 +151,8 @@ class BotStrategySimple {
             result = null,
             emptyCell;
 
-        Object.keys(group.cells).forEach((i) => {
-            let cell = group.cells[i];
+        Object.keys(group.cells).forEach((key) => {
+            let cell = group.cells[key];
             if (cell.number) {
                 absentNumbers.splice(absentNumbers.indexOf(cell.number), 1);
             } else {
@@ -89,6 +166,35 @@ class BotStrategySimple {
                 cell: emptyCell,
                 number: absentNumbers[0]
             };
+        }
+
+        return result;
+    }
+
+    /*** *********************** ***/
+
+    findAloneMark (difficulty) {
+        let result = null;
+
+        if (this.numbersWithMarks.length === this.boardState.size) {
+            Object.keys(this.boardState.notOpenedCells).every((key) => {
+                let cell = this.boardState.notOpenedCells[key];
+                if (!cell.number && cell.marks.length === 1) {
+                    result = {
+                        cell: cell,
+                        number: cell.marks[0]
+                    };
+
+                    return false;
+                }
+
+                return true;
+            });
+        }
+
+        if (result) {
+            result.difficulty = difficulty;
+            result.actionName = BotStrategySimple.ACTION_SET_CELL_NUMBER;
         }
 
         return result;
@@ -111,13 +217,13 @@ class BotStrategySimple {
                 result = this.findAloneMarkNumberPerGroupInGroups(this.boardState.squares, number);
             }
 
-            if (result) {
-                result.difficulty = difficulty;
-                return false;
-            }
-
-            return true;
+            return !result;
         });
+
+        if (result) {
+            result.difficulty = difficulty;
+            result.actionName = BotStrategySimple.ACTION_SET_CELL_NUMBER;
+        }
 
         return result;
     }
@@ -125,8 +231,8 @@ class BotStrategySimple {
     findAloneMarkNumberPerGroupInGroups (groups, number) {
         let result = null;
 
-        groups.every((group) => {
-            result = this.findAloneMarkNumberPerGroupInGroup(group, number);
+        Object.keys(groups).every((key) => {
+            result = this.findAloneMarkNumberPerGroupInGroup(groups[key], number);
             return !result;
         });
 
@@ -167,19 +273,21 @@ class BotStrategySimple {
         allNumbers.every((number) => {
             if (this.numbersWithMarks.indexOf(number) === -1) {
                 result = this.setMarkForNumber(number);
-                if (!result) {
-                    // this number already has all marks on the board
-                    this.numbersWithMarks.push(number);
-                    return true;
+                if (result) {
+                    return false;
                 }
 
-                return false;
+                // this number already has all marks on the board
+                this.numbersWithMarks.push(number);
+
+                return true;
             }
             return true;
         });
 
         if (result) {
             result.difficulty = difficulty;
+            result.actionName = BotStrategySimple.ACTION_SET_CELL_MARK;
         }
 
         return result;
@@ -188,8 +296,8 @@ class BotStrategySimple {
     setMarkForNumber (number) {
         let result = null;
 
-        Object.keys(this.boardState.cells).every((key) => {
-            let cell = this.boardState.cells[key],
+        Object.keys(this.boardState.notOpenedCells).every((key) => {
+            let cell = this.boardState.notOpenedCells[key],
                 coordsString = cell.coords.toString(),
                 row = this.boardState.rows[cell.coords.row],
                 col = this.boardState.cols[cell.coords.col],
@@ -197,10 +305,6 @@ class BotStrategySimple {
 
             if (!this.cellsWithMarks.hasOwnProperty(coordsString)) {
                 this.cellsWithMarks[coordsString] = [];
-            }
-
-            if (cell.isOpen) {
-                return true;
             }
 
             if (this.cellsWithMarks[coordsString].indexOf(number) !== -1) {
@@ -245,6 +349,48 @@ class BotStrategySimple {
         });
 
         return found;
+    }
+
+    /*** *********************** ***/
+
+    guessCell (difficulty) {
+        let result,
+            minMarksCell;
+
+        Object.keys(this.boardState.notOpenedCells).every((key) => {
+            let cell = this.boardState.notOpenedCells[key];
+
+            if (cell.marks.length > 0) {
+                if (!minMarksCell || (minMarksCell.marks.length > cell.marks.length)) {
+                    minMarksCell = cell;
+
+                    if (minMarksCell.marks.length === 2) {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        });
+
+        if (minMarksCell) {
+            result = {
+                cell: minMarksCell,
+                number: minMarksCell.marks[0]
+            };
+
+            this.guessCells.push({
+                coords: minMarksCell.coords.toString(),
+                number: result.number
+            });
+        }
+
+        if (result) {
+            result.difficulty = difficulty;
+            result.actionName = BotStrategySimple.ACTION_SET_CELL_NUMBER;
+        }
+
+        return result;
     }
 
     /*** *********************** ***/
