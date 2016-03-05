@@ -21,6 +21,8 @@ class BotInstance extends EventEmitter {
         this.emit('start');
 
         this.loop();
+
+        return this;
     }
 
     loop () {
@@ -67,6 +69,8 @@ class BotInstance extends EventEmitter {
         clearTimeout(this.actionTimeout);
 
         this.emit('stop');
+
+        return this;
     }
 
     doStrategyAction (actionName, parameters, timeout) {

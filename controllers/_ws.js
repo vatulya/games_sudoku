@@ -119,37 +119,50 @@ module.exports = (socket) => {
         Sudoku.load(data._game_hash)
             .then((sudoku) => {
 
-                Bot.create(sudoku)
-                    .on('start', () => {
-                        console.log('BOT START');
-                    })
-                    .on('beforeAction', () => {
-                        console.log('BOT: beforeAction');
-                    })
-                    .on('afterAction', (error) => {
-                        console.log('BOT: afterAction');
+                if (!Bot.exists(sudoku)) {
+                    Bot.create(sudoku)
+                        .on('start', () => {
+                            console.log('BOT START');
+                        })
+                        .on('beforeAction', () => {
+                            console.log('BOT: beforeAction');
+                        })
+                        .on('afterAction', (error) => {
+                            console.log('BOT: afterAction');
 
-                        if (error) {
-                            return forceRefresh(socket, error);
-                        }
+                            if (error) {
+                                return forceRefresh(socket, error);
+                            }
 
-                        let response = extend(sudoku.board.toHash(), sudoku.getSystemData());
-                        socket.emit('systemData', response);
-                    })
-                    .on('beforeSetCell', () => {})
-                    .on('afterSetCell', () => {})
-                    .on('beforeSetMark', () => {})
-                    .on('afterSetMark', () => {})
-                    .on('beforeUndo', () => {})
-                    .on('afterUndo', () => {})
-                    .on('stop', () => {
-                        console.log('BOT STOP');
-                    })
-                    .start();
+                            let response = extend(sudoku.board.toHash(), sudoku.getSystemData());
+                            socket.emit('systemData', response);
+                        })
+                        .on('beforeSetCell', () => {})
+                        .on('afterSetCell', () => {})
+                        .on('beforeSetMark', () => {})
+                        .on('afterSetMark', () => {})
+                        .on('beforeUndo', () => {})
+                        .on('afterUndo', () => {})
+                        .on('stop', () => {
+                            console.log('BOT STOP');
+                        });
+                }
 
+                Bot.start(sudoku);
             })
             .catch((error) => {
                 return forceRefresh(socket, error);
+            });
+    });
+
+    socket.on('startBot', (data) => {
+        console.log('WS: call "startBot"');
+
+        Sudoku.load(data._game_hash)
+            .then((sudoku) => {
+                if (Bot.exists(sudoku)) {
+                    Bot.stop(sudoku);
+                }
             });
     });
 
